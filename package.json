@@ -1,0 +1,6 @@
+{
+  "name": "kev-live-funds-tracker",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Public Vercel frontend for the Kalye East Varrio funds tracker"
+}
