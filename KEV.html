@@ -967,47 +967,47 @@
           root.innerHTML = '<div class="empty">No activity has been logged yet.</div>';
           return;
         }
-
-        function renderMasterList() {
-          const root = document.getElementById('master-list-table');
-          const query = document.getElementById('member-search').value.trim().toLowerCase();
-          const members = new Map();
-          appData.monitors.forEach(monitor => {
-            monitor.members.forEach(member => {
-              const key = member.name.trim().toLocaleLowerCase();
-              if (!key) return;
-              if (!members.has(key)) {
-                members.set(key, { name: member.name, monitors: new Set(), total: 0, lastContribution: '' });
-              }
-              const entry = members.get(key);
-              entry.monitors.add(monitor.name);
-              entry.total += Number(member.total || 0);
-              monitor.dates.forEach(date => {
-                if (Number(member.values[date] || 0) > 0 && date > entry.lastContribution) entry.lastContribution = date;
-              });
-            });
-          });
-          const rows = Array.from(members.values())
-            .map(member => ({ ...member, total: Math.round((member.total + Number.EPSILON) * 100) / 100 }))
-            .filter(member => !query || member.name.toLowerCase().includes(query) ||
-              Array.from(member.monitors).some(name => name.toLowerCase().includes(query)))
-            .sort((left, right) => left.name.localeCompare(right.name));
-          document.getElementById('master-list-count').textContent =
-            rows.length + (rows.length === 1 ? ' member' : ' members') + (query ? ' found' : ' in active monitoring forms');
-          if (!rows.length) {
-            root.innerHTML = '<div class="empty">' + (query ? 'No members match that search.' : 'No members found. Add members to a monitoring form or record a contribution.') + '</div>';
-            return;
-          }
-          root.innerHTML = '<table class="master-list-table"><thead><tr><th>Member</th><th>Monitoring forms</th><th>Total contributions</th><th>Last contribution</th></tr></thead><tbody>' +
-            rows.map(member => '<tr><td>' + escapeHtml(member.name) + '</td><td>' +
-              escapeHtml(Array.from(member.monitors).sort().join(', ')) + '</td><td class="amount">' +
-              currency.format(member.total) + '</td><td>' + escapeHtml(member.lastContribution || '—') + '</td></tr>').join('') +
-            '</tbody></table>';
-        }
         root.innerHTML = '<table><thead><tr><th>When</th><th>Who</th><th>Action</th><th>Item</th><th>Details</th></tr></thead><tbody>' +
           appData.audit.map(item => '<tr><td>' + escapeHtml(formatDateTime(item.timestamp)) + '</td><td>' + escapeHtml(item.actor) +
             '</td><td>' + escapeHtml(item.action) + '</td><td>' + escapeHtml(item.entity) + '</td><td class="audit-details">' +
             escapeHtml(item.details) + '</td></tr>').join('') + '</tbody></table>';
+      }
+
+      function renderMasterList() {
+        const root = document.getElementById('master-list-table');
+        const query = document.getElementById('member-search').value.trim().toLowerCase();
+        const members = new Map();
+        appData.monitors.forEach(monitor => {
+          monitor.members.forEach(member => {
+            const key = member.name.trim().toLocaleLowerCase();
+            if (!key) return;
+            if (!members.has(key)) {
+              members.set(key, { name: member.name, monitors: new Set(), total: 0, lastContribution: '' });
+            }
+            const entry = members.get(key);
+            entry.monitors.add(monitor.name);
+            entry.total += Number(member.total || 0);
+            monitor.dates.forEach(date => {
+              if (Number(member.values[date] || 0) > 0 && date > entry.lastContribution) entry.lastContribution = date;
+            });
+          });
+        });
+        const rows = Array.from(members.values())
+          .map(member => ({ ...member, total: Math.round((member.total + Number.EPSILON) * 100) / 100 }))
+          .filter(member => !query || member.name.toLowerCase().includes(query) ||
+            Array.from(member.monitors).some(name => name.toLowerCase().includes(query)))
+          .sort((left, right) => left.name.localeCompare(right.name));
+        document.getElementById('master-list-count').textContent =
+          rows.length + (rows.length === 1 ? ' member' : ' members') + (query ? ' found' : ' in active monitoring forms');
+        if (!rows.length) {
+          root.innerHTML = '<div class="empty">' + (query ? 'No members match that search.' : 'No members found. Add members to a monitoring form or record a contribution.') + '</div>';
+          return;
+        }
+        root.innerHTML = '<table class="master-list-table"><thead><tr><th>Member</th><th>Monitoring forms</th><th>Total contributions</th><th>Last contribution</th></tr></thead><tbody>' +
+          rows.map(member => '<tr><td>' + escapeHtml(member.name) + '</td><td>' +
+            escapeHtml(Array.from(member.monitors).sort().join(', ')) + '</td><td class="amount">' +
+            currency.format(member.total) + '</td><td>' + escapeHtml(member.lastContribution || '—') + '</td></tr>').join('') +
+          '</tbody></table>';
       }
 
       function updateData(data) {
