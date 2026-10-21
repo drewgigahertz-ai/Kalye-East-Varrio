@@ -38,8 +38,8 @@ This deployment intentionally has no sign-in. Anyone with the Vercel URL can vie
 - **Funds & forms:** Record additions by member and monitoring, or general deductions against the selected monitoring. Edit or void transactions; configure optional and required transaction fields.
 - **Monitoring:** Create multiple monitoring forms, add members and date columns, view read-only contribution values, visible general-deduction rows, and net totals. Copy the table for spreadsheet use.
 - **Audit logs:** Review activity recorded through the tracker.
-- **Master list:** Search members across active monitoring forms and review their monitoring forms, total contributions, and latest contribution date.
-- **About:** Shows the Kalye East Varrio name, Temple Street Trece detail, guiding values, tracker purpose, and public-access notice.
+- **Master list:** Search members across active monitoring forms and see their names and associated monitoring forms; no financial values are shown on this page.
+- **About:** Shows the Kalye East Varrio name, Temple Street Trece detail, guiding values, general tracker information, and public-access notice without financial details.
 - Existing addition transactions without a monitoring ID are displayed under the first active monitoring for compatibility.
 
 Amounts are limited to two decimal places. The app does not assign a currency symbol; use one currency consistently in the spreadsheet.

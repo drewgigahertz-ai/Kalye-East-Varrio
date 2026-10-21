@@ -429,7 +429,7 @@
         <section id="section-master-list" class="section">
           <div class="panel">
             <div class="panel-heading">
-              <div><h2>Master list</h2><div class="hint">Members across all active monitoring forms, with their recorded contributions.</div></div>
+              <div><h2>Master list</h2><div class="hint">Members registered across all active monitoring forms.</div></div>
               <input class="member-search" id="member-search" type="search" placeholder="Search members…" aria-label="Search members">
             </div>
             <div class="member-count-note" id="master-list-count"></div>
@@ -449,12 +449,12 @@
               <article class="about-card">
                 <div class="about-label">GUIDING VALUES</div>
                 <div class="about-value">Respect, Discipline, Loyalty</div>
-                <p class="about-copy">A shared commitment to keeping contributions, deductions, and activity clear and accountable.</p>
+                <p class="about-copy">A shared commitment to the values that bring the community together.</p>
               </article>
               <article class="about-card">
                 <div class="about-label">THIS APP</div>
-                <div class="about-value">Live Funds Tracker</div>
-                <p class="about-copy">Records fund activity, monitors member contributions across dates, and keeps an audit history of tracker changes.</p>
+                <div class="about-value">Community Tracker</div>
+                <p class="about-copy">Organizes member monitoring forms and keeps a clear history of activity.</p>
               </article>
               <article class="about-card">
                 <div class="about-label">ACCESS</div>
@@ -486,7 +486,7 @@
             funds: { title: 'Funds & forms', description: 'Manage contributions, deductions, and transaction forms.' },
             monitoring: { title: 'Monitoring', description: 'Review balances by member, date, and monitoring form.' },
             audit: { title: 'Audit logs', description: 'Review the activity recorded through the tracker.' },
-            'master-list': { title: 'Master list', description: 'Find members and review their monitoring totals.' },
+            'master-list': { title: 'Master list', description: 'Find members and see which monitoring forms they belong to.' },
             about: { title: 'About', description: 'The community and purpose behind this tracker.' }
           };
           const page = pages[button.dataset.tab];
@@ -982,31 +982,25 @@
             const key = member.name.trim().toLocaleLowerCase();
             if (!key) return;
             if (!members.has(key)) {
-              members.set(key, { name: member.name, monitors: new Set(), total: 0, lastContribution: '' });
+              members.set(key, { name: member.name, monitors: new Set() });
             }
             const entry = members.get(key);
             entry.monitors.add(monitor.name);
-            entry.total += Number(member.total || 0);
-            monitor.dates.forEach(date => {
-              if (Number(member.values[date] || 0) > 0 && date > entry.lastContribution) entry.lastContribution = date;
-            });
           });
         });
         const rows = Array.from(members.values())
-          .map(member => ({ ...member, total: Math.round((member.total + Number.EPSILON) * 100) / 100 }))
           .filter(member => !query || member.name.toLowerCase().includes(query) ||
             Array.from(member.monitors).some(name => name.toLowerCase().includes(query)))
           .sort((left, right) => left.name.localeCompare(right.name));
         document.getElementById('master-list-count').textContent =
           rows.length + (rows.length === 1 ? ' member' : ' members') + (query ? ' found' : ' in active monitoring forms');
         if (!rows.length) {
-          root.innerHTML = '<div class="empty">' + (query ? 'No members match that search.' : 'No members found. Add members to a monitoring form or record a contribution.') + '</div>';
+          root.innerHTML = '<div class="empty">' + (query ? 'No members match that search.' : 'No members found. Add members to a monitoring form.') + '</div>';
           return;
         }
-        root.innerHTML = '<table class="master-list-table"><thead><tr><th>Member</th><th>Monitoring forms</th><th>Total contributions</th><th>Last contribution</th></tr></thead><tbody>' +
+        root.innerHTML = '<table class="master-list-table"><thead><tr><th>Member</th><th>Monitoring forms</th></tr></thead><tbody>' +
           rows.map(member => '<tr><td>' + escapeHtml(member.name) + '</td><td>' +
-            escapeHtml(Array.from(member.monitors).sort().join(', ')) + '</td><td class="amount">' +
-            currency.format(member.total) + '</td><td>' + escapeHtml(member.lastContribution || '—') + '</td></tr>').join('') +
+            escapeHtml(Array.from(member.monitors).sort().join(', ')) + '</td></tr>').join('') +
           '</tbody></table>';
       }
 
