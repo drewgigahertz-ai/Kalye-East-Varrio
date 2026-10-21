@@ -38,8 +38,8 @@ This deployment intentionally has no sign-in. Anyone with the Vercel URL can vie
 - **Funds & forms:** Record additions by member and monitoring, or general deductions against the selected monitoring. Edit or void transactions; configure optional and required transaction fields.
 - **Monitoring:** Create multiple monitoring forms, add members and date columns, view read-only contribution values, visible general-deduction rows, and net totals. Copy the table for spreadsheet use.
 - **Audit logs:** Review activity recorded through the tracker.
-- **Master list:** Search active members and edit their plakaso. Members are active when they appear in an active monitoring form; the list shows only name and plakaso, without financial summaries. Plakaso values are stored in the automatically created `FT Member Profiles` sheet.
-- **About:** Shows the Kalye East Varrio name, guiding values, general tracker information, and public-access notice without financial summaries.
+- **Master list:** Search active members and view only their names and plakaso, without financial summaries. Members are active when they appear in an active monitoring form. Edit plakaso values directly in the automatically created `FT Member Profiles` sheet.
+- **About:** Gives a general introduction to the community and its shared values without publishing personal leadership details or territorial claims.
 - Existing addition transactions without a monitoring ID are displayed under the first active monitoring for compatibility.
 
 Amounts are limited to two decimal places. The app does not assign a currency symbol; use one currency consistently in the spreadsheet.

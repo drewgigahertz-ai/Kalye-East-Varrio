@@ -180,14 +180,13 @@
       .tab-button.active { color: #8dbaff; background: #142846; border-color: #1b385e; box-shadow: none; }
       .tab-button.active .tab-icon { color: #62a0ff; }
       .sidebar-foot { margin-top: auto; padding: 14px 10px 3px; border-top: 1px solid #1d2735; }
-      .sidebar-foot-label { color: #d7e4f8; font-size: 10px; font-weight: 750; letter-spacing: 1.3px; }
+      .sidebar-foot-label { color: #8dbaff; font-family: "UnifrakturCook", serif; font-size: 20px; line-height: 1.15; letter-spacing: .2px; }
       .sidebar-foot-copy { margin-top: 5px; color: #8dbaff; font-family: "UnifrakturCook", serif; font-size: 25px; line-height: 1.1; }
       .member-search { width: min(100%, 340px); }
       .master-list-table td:nth-child(2) { min-width: 240px; }
-      .plakaso-editor { display: flex; align-items: center; gap: 8px; }
-      .plakaso-editor input { width: min(100%, 250px); }
       .member-count-note { color: #92a0b4; font-size: 12px; }
       .about-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+      .about-intro { grid-column: 1 / -1; }
       .about-card { padding: 20px; border: 1px solid #202a38; border-radius: 11px; background: #101722; }
       .about-label { color: #7faeff; font-size: 10px; font-weight: 750; letter-spacing: 1.4px; }
       .about-value { margin-top: 9px; color: #edf4ff; font-size: 18px; font-weight: 700; }
@@ -303,14 +302,14 @@
           </button>
         </nav>
         <div class="sidebar-foot">
-          <div class="sidebar-foot-label">TEMPLE STREET TRECE</div>
+          <div class="sidebar-foot-label">Temple Street Trece</div>
           <div class="sidebar-foot-copy">213</div>
         </div>
       </aside>
       <div class="workspace">
         <header class="topbar">
           <div class="breadcrumb"><span>Kalye East Varrio</span><span>/</span><strong id="page-breadcrumb">Funds &amp; forms</strong></div>
-          <span class="topbar-tag" aria-label="213">213</span>
+          <span class="topbar-tag" aria-label="1102">1102</span>
         </header>
       <main class="shell">
       <div id="loading" class="loading">Connecting to your spreadsheet…</div>
@@ -434,37 +433,34 @@
         <section id="section-master-list" class="section">
           <div class="panel">
             <div class="panel-heading">
-              <div><h2>Master list</h2><div class="hint">Only active members are listed. Add or update a member’s plakaso here.</div></div>
+              <div><h2>Master list</h2><div class="hint">Only active members are listed. To update a plakaso, edit it in the FT Member Profiles sheet.</div></div>
               <input class="member-search" id="member-search" type="search" placeholder="Search members…" aria-label="Search members">
             </div>
             <div class="member-count-note" id="master-list-count"></div>
             <div class="table-wrap" id="master-list-table"></div>
-            <div class="status" id="master-list-status" role="status"></div>
           </div>
         </section>
 
         <section id="section-about" class="section">
           <div class="panel">
-            <div class="panel-heading"><div><h2>About</h2><div class="hint">The community and purpose behind this tracker.</div></div></div>
+            <div class="panel-heading"><div><h2>ABOUT US | KALYE EAST VARRIO</h2><div class="hint">Community background and shared values.</div></div></div>
             <div class="about-grid">
-              <article class="about-card">
-                <div class="about-label">COMMUNITY</div>
-                <div class="about-value">Kalye East Varrio</div>
+              <article class="about-card about-intro">
+                <div class="about-label">OUR COMMUNITY</div>
+                <div class="about-value">Established August 2025</div>
+                <p class="about-copy">Kalye East Varrio (KEV) is a community built around unity and mutual respect. This page shares its background and the values it aims to uphold.</p>
               </article>
               <article class="about-card">
-                <div class="about-label">GUIDING VALUES</div>
+                <div class="about-label">LEADERSHIP &amp; STRUCTURE</div>
+                <div class="about-value">Guidance, coordination, accountability</div>
+                <p class="about-copy">Defined responsibilities help the community stay organized and support clear, responsible decision-making.</p>
+              </article>
+              <article class="about-card">
+                <div class="about-label">OUR CORE VALUES</div>
                 <div class="about-value">Respect, Discipline, Loyalty</div>
-                <p class="about-copy">A shared commitment to the values that bring the community together.</p>
-              </article>
-              <article class="about-card">
-                <div class="about-label">THIS APP</div>
-                <div class="about-value">Community Tracker</div>
-                <p class="about-copy">Organizes member monitoring forms and keeps a clear history of activity.</p>
-              </article>
-              <article class="about-card">
-                <div class="about-label">ACCESS</div>
-                <div class="about-value">Public workspace</div>
-                <p class="about-copy">Anyone with the app link can view and change tracker records. Share the link only with people you trust.</p>
+                <p class="about-copy"><strong>Respect:</strong> Treat one another and the wider community with consideration.</p>
+                <p class="about-copy"><strong>Discipline:</strong> Practice self-control, consistency, and accountability.</p>
+                <p class="about-copy"><strong>Loyalty:</strong> Support one another responsibly and follow through on commitments.</p>
               </article>
             </div>
           </div>
@@ -492,7 +488,7 @@
             funds: { title: 'Funds & forms', description: 'Manage contributions, deductions, and transaction forms.' },
             monitoring: { title: 'Monitoring', description: 'Review balances by member, date, and monitoring form.' },
             audit: { title: 'Audit logs', description: 'Review the activity recorded through the tracker.' },
-            'master-list': { title: 'Master list', description: 'View active members and manage their plakaso.' },
+            'master-list': { title: 'Master list', description: 'View active members and their plakaso.' },
             about: { title: 'About', description: 'The community and purpose behind this tracker.' }
           };
           const page = pages[button.dataset.tab];
@@ -1000,19 +996,9 @@
           return;
         }
         root.innerHTML = '<table class="master-list-table"><thead><tr><th>Name</th><th>Plakaso</th></tr></thead><tbody>' +
-          rows.map(member => '<tr><td>' + escapeHtml(member.name) + '</td><td><div class="plakaso-editor">' +
-            '<input type="text" maxlength="120" data-plakaso value="' + escapeHtml(member.plakaso) +
-            '" aria-label="Plakaso for ' + escapeHtml(member.name) + '">' +
-            '<button class="btn small" type="button" data-save-plakaso data-member-name="' +
-            escapeHtml(member.name) + '">Save</button></div></td></tr>').join('') +
+          rows.map(member => '<tr><td>' + escapeHtml(member.name) + '</td><td>' +
+            escapeHtml(member.plakaso || '—') + '</td></tr>').join('') +
           '</tbody></table>';
-        root.querySelectorAll('[data-save-plakaso]').forEach(button => button.addEventListener('click', () => {
-          const input = button.closest('tr').querySelector('[data-plakaso]');
-          callServer('saveMemberPlakaso', [button.dataset.memberName, input.value], data => {
-            updateData(data);
-            setStatus(document.getElementById('master-list-status'), 'Plakaso saved.', false, true);
-          }, document.getElementById('master-list-status'));
-        }));
       }
 
       function updateData(data) {

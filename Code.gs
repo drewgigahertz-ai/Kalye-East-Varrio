@@ -47,7 +47,6 @@ function doPost(event) {
       getBranding: getBranding,
       saveFormField: saveFormField,
       archiveFormField: archiveFormField,
-      saveMemberPlakaso: saveMemberPlakaso,
       saveTransaction: saveTransaction,
       voidTransaction: voidTransaction,
       createMonitoring: createMonitoring,
@@ -221,37 +220,6 @@ function archiveFormField(fieldId) {
   found.values[5] = false;
   getSheet_('fields').getRange(found.rowNumber, 1, 1, TABLES.fields.headers.length).setValues([found.values]);
   audit_('Removed form field', 'Form field', String(fieldId), String(found.values[1]));
-  return getAppData();
-}
-
-function saveMemberPlakaso(memberName, plakaso) {
-  return withTrackerLock_(() => saveMemberPlakasoLocked_(memberName, plakaso));
-}
-
-function saveMemberPlakasoLocked_(memberName, plakaso) {
-  ensureTables_();
-  const name = cleanText_(memberName, 120);
-  const alias = cleanText_(plakaso, 120);
-  if (!name) throw new Error('Choose a valid active member.');
-  const normalizedName = name.toLowerCase();
-  const isActiveMember = getAppData().monitors.some(monitor =>
-    monitor.members.some(member => member.name.trim().toLowerCase() === normalizedName)
-  );
-  if (!isActiveMember) throw new Error('That member is not active in any monitoring form.');
-
-  const sheet = getSheet_('profiles');
-  const existing = getRows_('profiles').find(profile =>
-    String(profile.name).trim().toLowerCase() === normalizedName
-  );
-  if (existing) {
-    const found = findRow_('profiles', 'name', existing.name);
-    found.values[1] = alias;
-    found.values[2] = new Date();
-    sheet.getRange(found.rowNumber, 1, 1, TABLES.profiles.headers.length).setValues([found.values]);
-  } else {
-    sheet.appendRow([name, alias, new Date()]);
-  }
-  audit_('Updated member plakaso', 'Member', name, JSON.stringify({ name: name, plakaso: alias }));
   return getAppData();
 }
 
