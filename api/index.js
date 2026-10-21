@@ -3,6 +3,7 @@ const allowedMethods = new Set([
   'getBranding',
   'saveFormField',
   'archiveFormField',
+  'saveMemberPlakaso',
   'saveTransaction',
   'voidTransaction',
   'createMonitoring',

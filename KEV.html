@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=UnifrakturCook:wght@700&display=swap" rel="stylesheet">
     <style>
       :root {
         --ink: #102a56;
@@ -180,10 +180,12 @@
       .tab-button.active { color: #8dbaff; background: #142846; border-color: #1b385e; box-shadow: none; }
       .tab-button.active .tab-icon { color: #62a0ff; }
       .sidebar-foot { margin-top: auto; padding: 14px 10px 3px; border-top: 1px solid #1d2735; }
-      .sidebar-foot-label { color: #6f8097; font-size: 10px; font-weight: 750; letter-spacing: 1.3px; }
-      .sidebar-foot-copy { margin-top: 7px; color: #9aabc1; font-size: 11px; line-height: 1.5; }
+      .sidebar-foot-label { color: #d7e4f8; font-size: 10px; font-weight: 750; letter-spacing: 1.3px; }
+      .sidebar-foot-copy { margin-top: 5px; color: #8dbaff; font-family: "UnifrakturCook", serif; font-size: 25px; line-height: 1.1; }
       .member-search { width: min(100%, 340px); }
-      .master-list-table td:nth-child(2) { white-space: normal; min-width: 190px; }
+      .master-list-table td:nth-child(2) { min-width: 240px; }
+      .plakaso-editor { display: flex; align-items: center; gap: 8px; }
+      .plakaso-editor input { width: min(100%, 250px); }
       .member-count-note { color: #92a0b4; font-size: 12px; }
       .about-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
       .about-card { padding: 20px; border: 1px solid #202a38; border-radius: 11px; background: #101722; }
@@ -198,7 +200,8 @@
       }
       .breadcrumb { display: flex; align-items: center; gap: 9px; color: #7e8ea5; font-size: 12px; }
       .breadcrumb strong { color: #e3eaf5; font-weight: 650; }
-      .topbar-tag { padding: 4px 9px; border: 1px solid #27364b; border-radius: 999px; color: #91a1b8; font-size: 10px; letter-spacing: .5px; }
+      .topbar-tag { color: #8dbaff; font-family: "UnifrakturCook", serif; font-size: 29px; line-height: 1; }
+      .summary[hidden] { display: none; }
       .shell { max-width: none; margin: 0; padding: 28px clamp(20px, 3vw, 42px) 52px; }
       .page-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; margin-bottom: 22px; }
       .page-eyebrow { margin-bottom: 5px; color: #73a9ff; font-size: 10px; font-weight: 750; letter-spacing: 1.5px; }
@@ -246,7 +249,9 @@
         .brand-mark { width: 48px; height: 48px; flex-basis: 48px; border-radius: 11px; }
         h1 { font-size: 20px; }
         .tabs { flex-direction: row; gap: 4px; margin-top: 8px; overflow-x: auto; }
-        .tabs::before, .sidebar-foot { display: none; }
+        .tabs::before { display: none; }
+        .sidebar-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; padding: 7px 4px 0; }
+        .sidebar-foot-copy { margin: 0; font-size: 22px; }
         .tab-button { flex: 1 0 auto; justify-content: center; width: auto; padding: 8px 9px; font-size: 11px; }
         .tab-icon { width: 15px; height: 15px; flex-basis: 15px; }
         .workspace { margin-left: 0; }
@@ -298,14 +303,14 @@
           </button>
         </nav>
         <div class="sidebar-foot">
-          <div class="sidebar-foot-label">PUBLIC WORKSPACE</div>
-          <div class="sidebar-foot-copy">Anyone with this link can view and change tracker records.</div>
+          <div class="sidebar-foot-label">TEMPLE STREET TRECE</div>
+          <div class="sidebar-foot-copy">213</div>
         </div>
       </aside>
       <div class="workspace">
         <header class="topbar">
           <div class="breadcrumb"><span>Kalye East Varrio</span><span>/</span><strong id="page-breadcrumb">Funds &amp; forms</strong></div>
-          <span class="topbar-tag">LIVE TRACKER</span>
+          <span class="topbar-tag" aria-label="213">213</span>
         </header>
       <main class="shell">
       <div id="loading" class="loading">Connecting to your spreadsheet…</div>
@@ -318,7 +323,7 @@
             <p class="page-description" id="page-description">Manage contributions, deductions, and transaction forms.</p>
           </div>
         </div>
-        <section class="summary">
+        <section class="summary" id="summary-cards">
           <div class="summary-card"><div class="summary-label">Available funds</div><div class="summary-value" id="total-balance">0.00</div></div>
           <div class="summary-card"><div class="summary-label">Active members</div><div class="summary-value" id="member-count">0</div></div>
           <div class="summary-card"><div class="summary-label">Active monitorings</div><div class="summary-value" id="monitor-count">0</div></div>
@@ -429,11 +434,12 @@
         <section id="section-master-list" class="section">
           <div class="panel">
             <div class="panel-heading">
-              <div><h2>Master list</h2><div class="hint">Members registered across all active monitoring forms.</div></div>
+              <div><h2>Master list</h2><div class="hint">Only active members are listed. Add or update a member’s plakaso here.</div></div>
               <input class="member-search" id="member-search" type="search" placeholder="Search members…" aria-label="Search members">
             </div>
             <div class="member-count-note" id="master-list-count"></div>
             <div class="table-wrap" id="master-list-table"></div>
+            <div class="status" id="master-list-status" role="status"></div>
           </div>
         </section>
 
@@ -444,7 +450,6 @@
               <article class="about-card">
                 <div class="about-label">COMMUNITY</div>
                 <div class="about-value">Kalye East Varrio</div>
-                <p class="about-copy">Temple Street Trece</p>
               </article>
               <article class="about-card">
                 <div class="about-label">GUIDING VALUES</div>
@@ -482,11 +487,12 @@
         button.addEventListener('click', () => {
           document.querySelectorAll('.tab-button').forEach(item => item.classList.toggle('active', item === button));
           document.querySelectorAll('.section').forEach(section => section.classList.toggle('active', section.id === 'section-' + button.dataset.tab));
+          document.getElementById('summary-cards').hidden = ['master-list', 'about'].includes(button.dataset.tab);
           const pages = {
             funds: { title: 'Funds & forms', description: 'Manage contributions, deductions, and transaction forms.' },
             monitoring: { title: 'Monitoring', description: 'Review balances by member, date, and monitoring form.' },
             audit: { title: 'Audit logs', description: 'Review the activity recorded through the tracker.' },
-            'master-list': { title: 'Master list', description: 'Find members and see which monitoring forms they belong to.' },
+            'master-list': { title: 'Master list', description: 'View active members and manage their plakaso.' },
             about: { title: 'About', description: 'The community and purpose behind this tracker.' }
           };
           const page = pages[button.dataset.tab];
@@ -610,11 +616,6 @@
 
       function renderSummary() {
         const names = new Map();
-        appData.transactions.forEach(transaction => {
-          if (transaction.type === 'ADD' && transaction.member) {
-            names.set(transaction.member.toLowerCase(), transaction.member);
-          }
-        });
         const total = Number.isFinite(Number(appData.availableFunds))
           ? Number(appData.availableFunds)
           : appData.transactions.reduce((balance, transaction) =>
@@ -982,26 +983,36 @@
             const key = member.name.trim().toLocaleLowerCase();
             if (!key) return;
             if (!members.has(key)) {
-              members.set(key, { name: member.name, monitors: new Set() });
+              members.set(key, { name: member.name, plakaso: member.plakaso || '' });
             }
             const entry = members.get(key);
-            entry.monitors.add(monitor.name);
+            if (!entry.plakaso && member.plakaso) entry.plakaso = member.plakaso;
           });
         });
         const rows = Array.from(members.values())
           .filter(member => !query || member.name.toLowerCase().includes(query) ||
-            Array.from(member.monitors).some(name => name.toLowerCase().includes(query)))
+            member.plakaso.toLowerCase().includes(query))
           .sort((left, right) => left.name.localeCompare(right.name));
         document.getElementById('master-list-count').textContent =
-          rows.length + (rows.length === 1 ? ' member' : ' members') + (query ? ' found' : ' in active monitoring forms');
+          rows.length + (rows.length === 1 ? ' active member' : ' active members') + (query ? ' found' : '');
         if (!rows.length) {
           root.innerHTML = '<div class="empty">' + (query ? 'No members match that search.' : 'No members found. Add members to a monitoring form.') + '</div>';
           return;
         }
-        root.innerHTML = '<table class="master-list-table"><thead><tr><th>Member</th><th>Monitoring forms</th></tr></thead><tbody>' +
-          rows.map(member => '<tr><td>' + escapeHtml(member.name) + '</td><td>' +
-            escapeHtml(Array.from(member.monitors).sort().join(', ')) + '</td></tr>').join('') +
+        root.innerHTML = '<table class="master-list-table"><thead><tr><th>Name</th><th>Plakaso</th></tr></thead><tbody>' +
+          rows.map(member => '<tr><td>' + escapeHtml(member.name) + '</td><td><div class="plakaso-editor">' +
+            '<input type="text" maxlength="120" data-plakaso value="' + escapeHtml(member.plakaso) +
+            '" aria-label="Plakaso for ' + escapeHtml(member.name) + '">' +
+            '<button class="btn small" type="button" data-save-plakaso data-member-name="' +
+            escapeHtml(member.name) + '">Save</button></div></td></tr>').join('') +
           '</tbody></table>';
+        root.querySelectorAll('[data-save-plakaso]').forEach(button => button.addEventListener('click', () => {
+          const input = button.closest('tr').querySelector('[data-plakaso]');
+          callServer('saveMemberPlakaso', [button.dataset.memberName, input.value], data => {
+            updateData(data);
+            setStatus(document.getElementById('master-list-status'), 'Plakaso saved.', false, true);
+          }, document.getElementById('master-list-status'));
+        }));
       }
 
       function updateData(data) {
