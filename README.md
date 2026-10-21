@@ -10,7 +10,7 @@ The web interface is hosted on Vercel. Google Apps Script remains the server-sid
 4. In Vercel project **Settings → Environment Variables**, add `APPS_SCRIPT_API_URL` with the Apps Script `/exec` URL. Apply it to the environments you will deploy, then redeploy.
 5. Open the Vercel deployment URL and test with non-sensitive sample entries before using live fund data.
 
-The blue-and-black dashboard with a left navigation sidebar and plain dark background is served from `KEV.html`. The optional logo continues to load from `Images!B2`.
+The blue-and-black dashboard with a larger sidebar logo, condensed display title, and plain dark background is served from `KEV.html`. The optional logo continues to load from `Images!B2`.
 
 ## Test locally on Windows
 
@@ -38,6 +38,8 @@ This deployment intentionally has no sign-in. Anyone with the Vercel URL can vie
 - **Funds & forms:** Record additions by member and monitoring, or general deductions against the selected monitoring. Edit or void transactions; configure optional and required transaction fields.
 - **Monitoring:** Create multiple monitoring forms, add members and date columns, view read-only contribution values, visible general-deduction rows, and net totals. Copy the table for spreadsheet use.
 - **Audit logs:** Review activity recorded through the tracker.
+- **Master list:** Search members across active monitoring forms and review their monitoring forms, total contributions, and latest contribution date.
+- **About:** Shows the Kalye East Varrio name, Temple Street Trece detail, guiding values, tracker purpose, and public-access notice.
 - Existing addition transactions without a monitoring ID are displayed under the first active monitoring for compatibility.
 
 Amounts are limited to two decimal places. The app does not assign a currency symbol; use one currency consistently in the spreadsheet.
