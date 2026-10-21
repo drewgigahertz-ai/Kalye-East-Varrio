@@ -185,12 +185,38 @@
       .member-search { width: min(100%, 340px); }
       .master-list-table td:nth-child(2) { min-width: 240px; }
       .member-count-note { color: #92a0b4; font-size: 12px; }
+      .about-page { display: grid; gap: 16px; }
+      .about-hero {
+        position: relative; overflow: hidden; padding: clamp(24px, 4vw, 42px);
+        border: 1px solid #29466d; border-radius: 12px;
+        background: radial-gradient(ellipse at 88% 20%, rgba(42, 111, 210, .28), transparent 37%), linear-gradient(120deg, #101d2e, #111722 72%);
+      }
+      .about-hero::after { content: "KEV"; position: absolute; right: 26px; bottom: -30px; color: rgba(133, 178, 240, .07); font-size: clamp(90px, 18vw, 190px); font-weight: 850; letter-spacing: -.09em; line-height: 1; pointer-events: none; }
+      .about-kicker { color: #8dbaff; font-size: 10px; font-weight: 750; letter-spacing: 1.8px; }
+      .about-hero h3 { position: relative; z-index: 1; margin: 12px 0 0; color: #f2f7ff; font-size: clamp(24px, 3vw, 34px); letter-spacing: -.5px; }
+      .about-hero-copy { position: relative; z-index: 1; max-width: 760px; margin: 11px 0 0; color: #aebdd1; font-size: 14px; line-height: 1.75; }
+      .about-established { display: inline-flex; align-items: center; gap: 8px; margin-top: 20px; padding: 7px 11px; border: 1px solid #315581; border-radius: 999px; color: #bcd7ff; background: rgba(25, 57, 94, .55); font-size: 11px; font-weight: 700; letter-spacing: .5px; }
+      .about-established::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: #66a6ff; box-shadow: 0 0 10px rgba(102, 166, 255, .7); }
       .about-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
-      .about-intro { grid-column: 1 / -1; }
-      .about-card { padding: 20px; border: 1px solid #202a38; border-radius: 11px; background: #101722; }
+      .about-card { min-width: 0; padding: 21px; border: 1px solid #202a38; border-radius: 11px; background: #101722; }
+      .about-card-wide { grid-column: 1 / -1; }
       .about-label { color: #7faeff; font-size: 10px; font-weight: 750; letter-spacing: 1.4px; }
       .about-value { margin-top: 9px; color: #edf4ff; font-size: 18px; font-weight: 700; }
-      .about-copy { margin-top: 8px; color: #9aa9be; font-size: 13px; line-height: 1.65; }
+      .about-copy { margin: 9px 0 0; color: #9aa9be; font-size: 13px; line-height: 1.7; }
+      .about-role-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; margin-top: 16px; }
+      .about-role { padding: 12px 13px; border: 1px solid #253349; border-radius: 8px; background: #0c131e; }
+      .about-role strong { display: block; color: #e6effc; font-size: 13px; }
+      .about-role span { display: block; margin-top: 4px; color: #8799b1; font-size: 11px; line-height: 1.5; }
+      .about-note { margin-top: 13px; padding-left: 11px; border-left: 2px solid #426ea6; color: #8597af; font-size: 11px; line-height: 1.6; }
+      .about-values { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 15px; }
+      .about-value-card { padding: 14px; border-radius: 8px; background: #0c131e; }
+      .about-value-card strong { color: #dceaff; font-size: 13px; }
+      .about-value-card p { margin: 7px 0 0; color: #98a8be; font-size: 12px; line-height: 1.65; }
+      @media (max-width: 560px) {
+        .about-grid, .about-role-list, .about-values { grid-template-columns: 1fr; }
+        .about-card-wide { grid-column: auto; }
+        .about-hero::after { right: 10px; bottom: -16px; }
+      }
       .workspace { min-height: 100vh; margin-left: 258px; }
       .topbar {
         position: sticky; z-index: 4; top: 0; display: flex; align-items: center; justify-content: space-between;
@@ -443,25 +469,50 @@
 
         <section id="section-about" class="section">
           <div class="panel">
-            <div class="panel-heading"><div><h2>ABOUT US | KALYE EAST VARRIO</h2><div class="hint">Community background and shared values.</div></div></div>
-            <div class="about-grid">
-              <article class="about-card about-intro">
-                <div class="about-label">OUR COMMUNITY</div>
-                <div class="about-value">Established August 2025</div>
-                <p class="about-copy">Kalye East Varrio (KEV) is a community built around unity and mutual respect. This page shares its background and the values it aims to uphold.</p>
-              </article>
-              <article class="about-card">
-                <div class="about-label">LEADERSHIP &amp; STRUCTURE</div>
-                <div class="about-value">Guidance, coordination, accountability</div>
-                <p class="about-copy">Defined responsibilities help the community stay organized and support clear, responsible decision-making.</p>
-              </article>
-              <article class="about-card">
-                <div class="about-label">OUR CORE VALUES</div>
-                <div class="about-value">Respect, Discipline, Loyalty</div>
-                <p class="about-copy"><strong>Respect:</strong> Treat one another and the wider community with consideration.</p>
-                <p class="about-copy"><strong>Discipline:</strong> Practice self-control, consistency, and accountability.</p>
-                <p class="about-copy"><strong>Loyalty:</strong> Support one another responsibly and follow through on commitments.</p>
-              </article>
+            <div class="about-page">
+              <header class="about-hero">
+                <div class="about-kicker">ABOUT US</div>
+                <h3>KALYE EAST VARRIO</h3>
+                <p class="about-hero-copy">Welcome to the official domain of Kalye East Varrio (KEV). Established in August 2025, Kalye East Varrio stands as a testament to unity, strength, and brotherhood.</p>
+                <div class="about-established">ESTABLISHED AUGUST 2025</div>
+              </header>
+              <div class="about-grid">
+                <article class="about-card">
+                  <div class="about-label">LEADERSHIP &amp; STRUCTURE</div>
+                  <div class="about-value">Guidance with clear responsibilities</div>
+                  <p class="about-copy">The organization is structured around defined roles that support coordination, guidance, and accountability.</p>
+                  <div class="about-role-list">
+                    <div class="about-role"><strong>Alas</strong><span>Leadership and direction</span></div>
+                    <div class="about-role"><strong>Adviser</strong><span>Guidance and counsel</span></div>
+                    <div class="about-role"><strong>Pointmen</strong><span>Coordination and communication</span></div>
+                    <div class="about-role"><strong>Treasurer</strong><span>Financial record-keeping</span></div>
+                  </div>
+                  <div class="about-note">Personal names and nicknames are not displayed on this public page.</div>
+                </article>
+                <article class="about-card">
+                  <div class="about-label">TERRITORY &amp; AFFILIATIONS</div>
+                  <div class="about-value">Community connections</div>
+                  <p class="about-copy">Specific territorial claims and affiliation details are not published on this public page.</p>
+                  <div class="about-note">Keep public-facing information focused on community identity, shared values, and non-sensitive details.</div>
+                </article>
+                <article class="about-card about-card-wide">
+                  <div class="about-label">OUR CORE VALUES</div>
+                  <div class="about-value">The principles we aim to live by</div>
+                  <div class="about-values">
+                    <div class="about-value-card">
+                      <strong>Respect</strong>
+                      <p>Respect is earned, given, and non-negotiable. We hold one another and our community in high regard, and expect everyone to act with honor.</p>
+                    </div>
+                    <div class="about-value-card">
+                      <strong>Discipline</strong>
+                      <p>Precision, self-control, and structure guide our actions. We value consistency, clear expectations, and accountability.</p>
+                    </div>
+                    <div class="about-value-card">
+                      <strong>Loyalty</strong>
+                      <p>We stand by one another through challenges, support our community, and stay true to our shared commitments.</p>
+                    </div>
+                  </div>
+                </article>
             </div>
           </div>
         </section>
@@ -485,13 +536,14 @@
           document.querySelectorAll('.section').forEach(section => section.classList.toggle('active', section.id === 'section-' + button.dataset.tab));
           document.getElementById('summary-cards').hidden = ['master-list', 'about'].includes(button.dataset.tab);
           const pages = {
-            funds: { title: 'Funds & forms', description: 'Manage contributions, deductions, and transaction forms.' },
-            monitoring: { title: 'Monitoring', description: 'Review balances by member, date, and monitoring form.' },
-            audit: { title: 'Audit logs', description: 'Review the activity recorded through the tracker.' },
-            'master-list': { title: 'Master list', description: 'View active members and their plakaso.' },
-            about: { title: 'About', description: 'The community and purpose behind this tracker.' }
+            funds: { eyebrow: 'FUNDS TRACKER', title: 'Funds & forms', description: 'Manage contributions, deductions, and transaction forms.' },
+            monitoring: { eyebrow: 'MONITORING', title: 'Monitoring', description: 'Review balances by member, date, and monitoring form.' },
+            audit: { eyebrow: 'ACTIVITY', title: 'Audit logs', description: 'Review the activity recorded through the tracker.' },
+            'master-list': { eyebrow: 'DIRECTORY', title: 'Master list', description: 'View active members and their plakaso.' },
+            about: { eyebrow: 'COMMUNITY', title: 'About us | Kalye East Varrio', description: 'Community background, structure, and shared values.' }
           };
           const page = pages[button.dataset.tab];
+          document.querySelector('.page-eyebrow').textContent = page.eyebrow;
           document.getElementById('page-breadcrumb').textContent = page.title;
           document.getElementById('page-title').textContent = page.title;
           document.getElementById('page-description').textContent = page.description;
