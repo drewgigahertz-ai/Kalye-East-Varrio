@@ -10,7 +10,7 @@ The web interface is hosted on Vercel. Google Apps Script remains the server-sid
 4. In Vercel project **Settings → Environment Variables**, add `APPS_SCRIPT_API_URL` with the Apps Script `/exec` URL. Apply it to the environments you will deploy, then redeploy.
 5. Open the Vercel deployment URL and test with non-sensitive sample entries before using live fund data.
 
-The blue-and-black dashboard with a larger sidebar logo, condensed display title, and plain dark background is served from `KEV.html`. The optional logo continues to load from `Images!B2`.
+The blue-and-black dashboard with a larger sidebar logo, condensed display title, and plain dark background is served from `KEV.html`. The browser tab title is **Kalye East Varrio**. The logo from `Images!B2` is used for both the sidebar and browser favicon; a KEV monogram is shown as the favicon if no logo is configured.
 
 ## Test locally on Windows
 

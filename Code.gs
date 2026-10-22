@@ -33,7 +33,7 @@ const TABLES = {
 
 function doGet() {
   return HtmlService.createHtmlOutputFromFile('KEV')
-    .setTitle('Live Funds Tracker')
+    .setTitle('Kalye East Varrio')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1');
 }
 

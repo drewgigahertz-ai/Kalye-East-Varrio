@@ -3,6 +3,8 @@
   <head>
     <base target="_top">
     <meta charset="utf-8">
+    <title>Kalye East Varrio</title>
+    <link id="app-favicon" rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23142646'/%3E%3Ctext x='50%25' y='56%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial,sans-serif' font-size='35' font-weight='700' fill='%238dbaff'%3EK%3C/text%3E%3C/svg%3E">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=UnifrakturCook:wght@700&display=swap" rel="stylesheet">
@@ -247,6 +249,16 @@
       input, select, textarea, .monitor-select, .field input, .field select, .field textarea, .cell-input {
         color: #e4ecf8; background-color: #0b111a; border-color: #2a394e;
       }
+      select.monitor-select,
+      select.monitor-select:enabled,
+      select.monitor-select:disabled {
+        color: #e4ecf8 !important;
+        -webkit-text-fill-color: #e4ecf8;
+        background-color: #0b111a !important;
+        opacity: 1 !important;
+        color-scheme: dark;
+      }
+      select.monitor-select option { color: #e4ecf8; background-color: #0b111a; }
       input::placeholder, textarea::placeholder { color: #71819a; }
       .field label { color: #a9b7ca; }
       .btn, .transaction-mode { color: #d6e1f0; background: #111c2b; border-color: #2a394e; }
@@ -639,6 +651,7 @@
               };
               logo.onerror = () => setStatus(status, 'The logo in Images!B2 could not be displayed.', true);
               logo.src = branding.logo;
+              document.getElementById('app-favicon').href = branding.logo;
             }
             if (branding.error) setStatus(status, branding.error, true);
             else setStatus(status, '');
