@@ -158,35 +158,35 @@
       .sidebar {
         position: fixed; z-index: 5; inset: 0 auto 0 0; display: flex; flex-direction: column;
         width: 258px; padding: 18px 14px 14px; background-color: #0a0f16;
-        background-image: linear-gradient(rgba(5, 12, 25, .32), rgba(5, 12, 25, .42)), url("./assets/sidebar-paisley.png");
+        background-image: linear-gradient(rgba(5, 12, 25, .55), rgba(5, 12, 25, .6)), url("./assets/sidebar-paisley.png");
         background-size: auto, 100% auto; background-position: center, center top;
         background-repeat: no-repeat, repeat-y; border-right: 1px solid #1d2735;
       }
-      .sidebar-brand { display: flex; align-items: center; gap: 12px; min-height: 82px; padding: 0 6px 15px; border-bottom: 1px solid #1d2735; }
+      .sidebar-brand { display: flex; align-items: center; gap: 12px; min-height: 82px; padding: 0 6px 15px; border-bottom: 1px solid rgba(157, 184, 220, .22); background: linear-gradient(90deg, rgba(5, 10, 20, .42), rgba(5, 10, 20, .12)); }
       .brand { gap: 13px; min-width: 0; }
       .brand-mark { width: 72px; height: 72px; flex: 0 0 72px; border-radius: 14px; font-size: 18px; background: transparent; }
       .brand-mark img { background: transparent; }
       .brand-copy { min-width: 0; padding: 0; border: 0; background: transparent; box-shadow: none; }
-      h1 { color: #f0f5fd; font-family: "Barlow Condensed", "Arial Narrow", sans-serif; font-size: 23px; line-height: .98; letter-spacing: .2px; }
-      .subtitle { color: #91a0b4; font-size: 11px; }
+      h1 { color: #ffffff; font-family: "Barlow Condensed", "Arial Narrow", sans-serif; font-size: 23px; line-height: .98; letter-spacing: .2px; text-shadow: 0 1px 4px #000, 0 0 10px rgba(0, 0, 0, .75); }
+      .subtitle { color: #d5e2f4; font-size: 11px; text-shadow: 0 1px 4px #000, 0 0 8px rgba(0, 0, 0, .9); }
       .tabs {
         display: flex; flex-direction: column; align-items: stretch; gap: 4px; width: 100%;
         margin: 20px 0 0; padding: 0; border: 0; border-radius: 0; background: transparent;
       }
-      .tabs::before { content: "WORKSPACE"; margin: 0 10px 9px; color: #66768d; font-size: 10px; letter-spacing: 1.6px; font-weight: 750; }
+      .tabs::before { content: "WORKSPACE"; margin: 0 10px 9px; color: #d4e2f5; font-size: 10px; letter-spacing: 1.6px; font-weight: 750; text-shadow: 0 1px 4px #000, 0 0 8px #000; }
       .tab-button {
         display: flex; align-items: center; gap: 11px; width: 100%; text-align: left; padding: 11px 12px;
-        border: 1px solid transparent; border-radius: 8px; color: #a8b6ca; background: transparent;
-        font-size: 13px; font-weight: 650;
+        border: 1px solid transparent; border-radius: 8px; color: #e0e9f7; background: rgba(5, 10, 20, .16);
+        font-size: 13px; font-weight: 700; text-shadow: 0 1px 3px #000, 0 0 7px rgba(0, 0, 0, .85);
       }
-      .tab-icon { width: 17px; height: 17px; flex: 0 0 17px; color: #8292a8; }
-      .tab-button:hover { color: #e8f1ff; background: #111a27; }
+      .tab-icon { width: 17px; height: 17px; flex: 0 0 17px; color: #c0d3ee; }
+      .tab-button:hover { color: #ffffff; background: rgba(17, 26, 39, .92); }
       .tab-button:hover .tab-icon { color: #a8caff; }
       .tab-button.active { color: #8dbaff; background: #142846; border-color: #1b385e; box-shadow: none; }
       .tab-button.active .tab-icon { color: #62a0ff; }
-      .sidebar-foot { margin-top: auto; padding: 14px 10px 3px; border-top: 1px solid #1d2735; }
-      .sidebar-foot-label { color: #8dbaff; font-family: "UnifrakturCook", serif; font-size: 20px; line-height: 1.15; letter-spacing: .2px; }
-      .sidebar-foot-copy { margin-top: 5px; color: #8dbaff; font-family: "UnifrakturCook", serif; font-size: 25px; line-height: 1.1; }
+      .sidebar-foot { margin-top: auto; padding: 14px 10px 3px; border-top: 1px solid rgba(157, 184, 220, .28); background: linear-gradient(90deg, rgba(5, 10, 20, .5), rgba(5, 10, 20, .18)); }
+      .sidebar-foot-label { color: #d2e4ff; font-family: "UnifrakturCook", serif; font-size: 20px; line-height: 1.15; letter-spacing: .2px; text-shadow: 0 1px 4px #000, 0 0 9px #000; }
+      .sidebar-foot-copy { margin-top: 5px; color: #d2e4ff; font-family: "UnifrakturCook", serif; font-size: 25px; line-height: 1.1; text-shadow: 0 1px 4px #000, 0 0 9px #000; }
       .member-search { width: min(100%, 340px); }
       .master-list-table td:nth-child(2) { min-width: 240px; }
       .member-count-note { color: #92a0b4; font-size: 12px; }
