@@ -1,6 +1,10 @@
 const SPREADSHEET_ID = '1bK_remWm6O5Jj4p37stkf4vCi3jV0p4zyh5U2wiM-QU';
 
 const TABLES = {
+  accounts: {
+    name: 'ACCOUNTS',
+    headers: ['username', 'password']
+  },
   transactions: {
     name: 'FT Transactions',
     headers: ['id', 'createdAt', 'updatedAt', 'type', 'member', 'amount', 'date', 'purpose', 'recordedBy', 'customFields', 'status', 'monitorId']
@@ -43,6 +47,7 @@ function doPost(event) {
   try {
     const request = JSON.parse(event && event.postData ? event.postData.contents : '{}');
     const methods = Object.assign(Object.create(null), {
+      login: login,
       getAppData: getAppData,
       getBranding: getBranding,
       saveFormField: saveFormField,
@@ -63,6 +68,21 @@ function doPost(event) {
       error: error && error.message ? error.message : 'The tracker request failed.'
     }));
   }
+}
+
+function login(username, password) {
+  ensureTables_();
+  const cleanUsername = cleanText_(username, 120);
+  const cleanPassword = cleanText_(password, 120);
+  if (!cleanUsername || !cleanPassword) throw new Error('Enter your username and password.');
+
+  const account = getRows_('accounts').find(row =>
+    String(row.username).trim().toLowerCase() === cleanUsername.toLowerCase() &&
+    String(row.password).trim() === cleanPassword
+  );
+
+  if (!account) throw new Error('Invalid username or password.');
+  return { ok: true, username: cleanUsername };
 }
 
 function getAppData() {
