@@ -120,8 +120,33 @@
       .status.error { color: var(--red); }
       .status.success { color: var(--green); }
       .loading { color: var(--muted); padding: 40px; text-align: center; }
-      .audit-details { max-width: 420px; overflow-wrap: anywhere; white-space: normal; color: #52637a; font-size: 12px; }
-      .right { margin-left: auto; }
+      .login-page {
+        min-height: 100vh; display: grid; place-items: center; padding: 24px; background:
+          radial-gradient(circle at top, rgba(67, 117, 234, 0.28), transparent 32%),
+          linear-gradient(135deg, #08121d 0%, #101c30 55%, #0f1728 100%);
+      }
+      .login-card {
+        width: min(100%, 420px); padding: 30px 26px; border: 1px solid rgba(165, 188, 216, 0.22);
+        border-radius: 18px; background: rgba(10, 18, 28, 0.9); box-shadow: 0 22px 50px rgba(0, 0, 0, 0.32);
+      }
+      .login-brand {
+        display: flex; align-items: center; gap: 12px; margin-bottom: 18px;
+      }
+      .login-mark {
+        width: 54px; height: 54px; display: grid; place-items: center; border-radius: 14px;
+        font-weight: 800; color: #fff; background: linear-gradient(135deg, #2d74f8, #183d7a); box-shadow: 0 12px 30px rgba(44, 92, 196, 0.38);
+      }
+      .login-title { margin: 0; font-size: 25px; letter-spacing: -.4px; color: #f2f7ff; }
+      .login-subtitle { color: #9aa9be; margin-top: 4px; font-size: 12px; }
+      .login-form { display: grid; gap: 12px; margin-top: 20px; }
+      .login-form input {
+        width: 100%; padding: 11px 12px; background: rgba(13, 21, 31, 0.9); border: 1px solid #2a394e; border-radius: 10px; color: #edf4ff;
+      }
+      .login-form button { width: 100%; margin-top: 8px; }
+      .login-status { min-height: 18px; margin-top: 8px; font-size: 12px; }
+      .login-status.error { color: #ff8a96; }
+      .login-status.success { color: #6fe9ba; }
+      .hidden { display: none !important; }
       @media (max-width: 820px) {
         .shell { padding: 20px 15px 38px; }
         .form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -536,595 +561,599 @@
       </div>
     </div>
 
-    <script>
-      let appData = { fields: [], transactions: [], monitors: [], audit: [], actor: '' };
-      const currency = new Intl.NumberFormat(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-      const today = new Date();
-      document.getElementById('transaction-date').value = toDateInput(today);
-      document.getElementById('monitor-date').value = toDateInput(today);
-      document.getElementById('transaction-recorded-by').value = '';
-      document.getElementById('member-search').addEventListener('input', renderMasterList);
+    <div id="login-page" class="login-page">
+      <div class="login-card">
+        <div class="login-brand">
+          <div class="login-mark">KEV</div>
+          <div>
+            <h1 class="login-title">Kalye East Varrio</h1>
+            <div class="login-subtitle">Funds tracker access</div>
+          </div>
+        </div>
+        <form id="login-form" class="login-form">
+          <div class="field">
+            <label for="login-username">Username</label>
+            <input id="login-username" type="text" autocomplete="username" placeholder="Enter username" required>
+          </div>
+          <div class="field">
+            <label for="login-password">Password</label>
+            <input id="login-password" type="password" autocomplete="current-password" placeholder="Enter password" required>
+          </div>
+          <button class="btn primary" type="submit">Login</button>
+          <div id="login-status" class="login-status" role="status" aria-live="polite"></div>
+        </form>
+      </div>
+    </div>
 
-      document.querySelectorAll('.tab-button').forEach(button => {
-        button.addEventListener('click', () => {
-          document.querySelectorAll('.tab-button').forEach(item => item.classList.toggle('active', item === button));
-          document.querySelectorAll('.section').forEach(section => section.classList.toggle('active', section.id === 'section-' + button.dataset.tab));
-          document.getElementById('summary-cards').hidden = ['master-list', 'about'].includes(button.dataset.tab);
-          const pages = {
-            funds: { eyebrow: 'FUNDS TRACKER', title: 'Funds & forms', description: 'Manage contributions, deductions, and transaction forms.' },
-            monitoring: { eyebrow: 'MONITORING', title: 'Monitoring', description: 'Review balances by member, date, and monitoring form.' },
-            audit: { eyebrow: 'ACTIVITY', title: 'Audit logs', description: 'Review the activity recorded through the tracker.' },
-            'master-list': { eyebrow: 'DIRECTORY', title: 'Master list', description: 'View active members and their plakaso.' },
-            about: { eyebrow: 'COMMUNITY', title: 'About us | Kalye East Varrio', description: 'Community background, structure, and shared values.' }
-          };
-          const page = pages[button.dataset.tab];
-          document.querySelector('.page-eyebrow').textContent = page.eyebrow;
-          document.getElementById('page-breadcrumb').textContent = page.title;
-          document.getElementById('page-title').textContent = page.title;
-          document.getElementById('page-description').textContent = page.description;
-        });
-      });
+    <div id="app-shell" class="hidden">
+      <script>
+        let appData = { fields: [], transactions: [], monitors: [], audit: [], actor: '' };
+        let loggedInUser = '';
+        const currency = new Intl.NumberFormat(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const today = new Date();
+        const loginPage = document.getElementById('login-page');
+        const app = document.getElementById('app');
+        const appShell = document.getElementById('app-shell');
+        const loginForm = document.getElementById('login-form');
+        const loginStatus = document.getElementById('login-status');
 
-      document.getElementById('field-type').addEventListener('change', event => {
-        document.getElementById('field-options-wrap').hidden = event.target.value !== 'select';
-      });
-      document.querySelectorAll('[data-transaction-type]').forEach(button => {
-        button.addEventListener('click', () => setTransactionType(button.dataset.transactionType));
-      });
-      document.getElementById('transaction-form').addEventListener('submit', submitTransaction);
-      document.getElementById('transaction-cancel').addEventListener('click', resetTransactionForm);
-      document.getElementById('field-form').addEventListener('submit', submitField);
-      document.getElementById('field-cancel').addEventListener('click', resetFieldForm);
-      document.getElementById('monitor-form').addEventListener('submit', submitMonitor);
-      document.getElementById('monitor-member-form').addEventListener('submit', submitMonitorMember);
-      document.getElementById('monitor-date-form').addEventListener('submit', submitMonitorDate);
-      document.getElementById('monitor-picker').addEventListener('change', () => {
-        const monitorId = document.getElementById('monitor-picker').value;
-        if (appData.monitors.some(monitor => monitor.id === monitorId)) {
-          document.getElementById('transaction-monitor').value = monitorId;
+        loginForm.addEventListener('submit', handleLogin);
+
+        function handleLogin(event) {
+          event.preventDefault();
+          const username = document.getElementById('login-username').value.trim();
+          const password = document.getElementById('login-password').value.trim();
+          setLoginStatus('Checking credentials…', false);
+
+          apiCall('login', [username, password])
+            .then(() => {
+              loggedInUser = username;
+              loginPage.classList.add('hidden');
+              appShell.classList.remove('hidden');
+              app.hidden = false;
+              setLoginStatus('', false);
+              loadData();
+            })
+            .catch(error => {
+              setLoginStatus(error && error.message ? error.message : 'Login failed.', true);
+            });
         }
-        renderMonitor();
-      });
-      document.getElementById('archive-monitor').addEventListener('click', archiveCurrentMonitor);
-      document.getElementById('copy-monitor').addEventListener('click', copyMonitorTable);
-      document.getElementById('refresh-monitor').addEventListener('click', refreshMonitorList);
-      document.getElementById('transaction-monitor').addEventListener('change', () => {
-        const selected = appData.monitors.find(monitor => monitor.id === document.getElementById('transaction-monitor').value);
-        if (selected) {
-          document.getElementById('monitor-picker').value = selected.id;
+
+        function setLoginStatus(message, isError) {
+          loginStatus.textContent = message;
+          loginStatus.classList.toggle('error', Boolean(isError));
+          loginStatus.classList.toggle('success', !isError && Boolean(message));
+        }
+
+        function callServer(method, args, onSuccess, statusElement) {
+          if (statusElement) setStatus(statusElement, 'Saving…');
+          apiCall(method, args)
+            .then(result => {
+              if (statusElement) setStatus(statusElement, '');
+              if (onSuccess) onSuccess(result);
+            })
+            .catch(error => {
+              if (statusElement) setStatus(statusElement, error.message || 'The request failed.', true);
+              else window.alert(error.message || 'The request failed.');
+            });
+        }
+
+        async function apiCall(method, args) {
+          const response = await fetch('/api', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ method: method, args: args || [] })
+          });
+          let payload;
+          try {
+            payload = await response.json();
+          } catch (error) {
+            throw new Error('The server returned an unreadable response.');
+          }
+          if (!response.ok || payload.error) throw new Error(payload.error || 'The request failed.');
+          return payload.result;
+        }
+
+        function loadData() {
+          apiCall('getAppData')
+            .then(data => {
+              appData = data;
+              document.getElementById('loading').hidden = true;
+              document.getElementById('app').hidden = false;
+              renderApp();
+              loadBranding();
+            })
+            .catch(error => {
+              const loading = document.getElementById('loading');
+              loading.textContent = error && error.message ? error.message : 'Could not load the tracker. Check spreadsheet access and Apps Script deployment settings.';
+              loading.style.color = '#bf3e48';
+            });
+        }
+
+        function loadBranding() {
+          apiCall('getBranding')
+            .then(branding => {
+              const status = document.getElementById('branding-status');
+              const logo = document.getElementById('brand-logo');
+              if (branding.logo) {
+                logo.onload = () => {
+                  logo.style.display = 'block';
+                  document.getElementById('brand-fallback').hidden = true;
+                };
+                logo.onerror = () => setStatus(status, 'The logo in Images!B2 could not be displayed.', true);
+                logo.src = branding.logo;
+              }
+              if (branding.error) setStatus(status, branding.error, true);
+              else setStatus(status, '');
+            })
+            .catch(error => {
+              setStatus(document.getElementById('branding-status'),
+                error && error.message ? error.message : 'Could not load the logo from Images!B2.', true);
+            });
+        }
+
+        function renderApp() {
+          renderSummary();
+          renderCustomInputs({});
+          renderFieldList();
+          renderTransactions();
+          renderMonitorPicker();
+          renderTransactionMonitorPicker();
+          setTransactionType(document.getElementById('transaction-type').value || 'ADD');
           renderMonitor();
+          renderAudit();
+          renderMasterList();
         }
-      });
-      loadData();
 
-      function callServer(method, args, onSuccess, statusElement) {
-        if (statusElement) setStatus(statusElement, 'Saving…');
-        apiCall(method, args)
-          .then(result => {
-            if (statusElement) setStatus(statusElement, '');
-            if (onSuccess) onSuccess(result);
-          })
-          .catch(error => {
-            if (statusElement) setStatus(statusElement, error.message || 'The request failed.', true);
-            else window.alert(error.message || 'The request failed.');
-          });
-      }
-
-      async function apiCall(method, args) {
-        const response = await fetch('/api', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ method: method, args: args || [] })
-        });
-        let payload;
-        try {
-          payload = await response.json();
-        } catch (error) {
-          throw new Error('The server returned an unreadable response.');
+        function renderSummary() {
+          const names = new Map();
+          const total = Number.isFinite(Number(appData.availableFunds))
+            ? Number(appData.availableFunds)
+            : appData.transactions.reduce((balance, transaction) =>
+              balance + (transaction.type === 'ADD' ? transaction.amount : -transaction.amount), 0);
+          document.getElementById('total-balance').textContent = currency.format(total);
+          document.getElementById('monitor-count').textContent = String(appData.monitors.length);
+          appData.monitors.forEach(monitor => monitor.members.forEach(member => names.set(member.name.toLowerCase(), member.name)));
+          document.getElementById('member-count').textContent = String(names.size);
+          document.getElementById('member-options').innerHTML = [...names.values()].sort().map(name => '<option value="' + escapeHtml(name) + '"></option>').join('');
         }
-        if (!response.ok || payload.error) throw new Error(payload.error || 'The request failed.');
-        return payload.result;
-      }
 
-      function loadData() {
-        apiCall('getAppData')
-          .then(data => {
-            appData = data;
-            document.getElementById('loading').hidden = true;
-            document.getElementById('app').hidden = false;
-            renderApp();
-            loadBranding();
-          })
-          .catch(error => {
-            const loading = document.getElementById('loading');
-            loading.textContent = error && error.message ? error.message : 'Could not load the tracker. Check spreadsheet access and Apps Script deployment settings.';
-            loading.style.color = '#bf3e48';
-          });
-      }
-
-      function loadBranding() {
-        apiCall('getBranding')
-          .then(branding => {
-            const status = document.getElementById('branding-status');
-            const logo = document.getElementById('brand-logo');
-            if (branding.logo) {
-              logo.onload = () => {
-                logo.style.display = 'block';
-                document.getElementById('brand-fallback').hidden = true;
-              };
-              logo.onerror = () => setStatus(status, 'The logo in Images!B2 could not be displayed.', true);
-              logo.src = branding.logo;
+        function renderCustomInputs(values) {
+          const root = document.getElementById('custom-fields');
+          const isDeduction = document.getElementById('transaction-type').value === 'DEDUCT';
+          const visibleFields = appData.fields.filter(field =>
+            !(isDeduction && String(field.label).trim().toLowerCase() === 'member'));
+          root.innerHTML = visibleFields.map(field => {
+            const id = 'custom-' + field.id;
+            const required = field.required ? ' required' : '';
+            let input;
+            if (field.type === 'select') {
+              input = '<select id="' + escapeHtml(id) + '"' + required + '><option value="">Choose…</option>' +
+                field.options.map(option => '<option value="' + escapeHtml(option) + '">' + escapeHtml(option) + '</option>').join('') + '</select>';
+            } else {
+              const type = ['number', 'date'].includes(field.type) ? field.type : 'text';
+              input = '<input id="' + escapeHtml(id) + '" type="' + type + '"' + required + (type === 'number' ? ' step="any"' : '') + '>';
             }
-            if (branding.error) setStatus(status, branding.error, true);
-            else setStatus(status, '');
-          })
-          .catch(error => {
-            setStatus(document.getElementById('branding-status'),
-              error && error.message ? error.message : 'Could not load the logo from Images!B2.', true);
+            return '<div class="field"><label for="' + escapeHtml(id) + '">' + escapeHtml(field.label) + (field.required ? ' *' : '') +
+              '</label>' + input + '</div>';
+          }).join('');
+          visibleFields.forEach(field => {
+            const input = document.getElementById('custom-' + field.id);
+            if (input && values[field.id] != null) input.value = values[field.id];
           });
-      }
+        }
 
-      function renderApp() {
-        renderSummary();
-        renderCustomInputs({});
-        renderFieldList();
-        renderTransactions();
-        renderMonitorPicker();
-        renderTransactionMonitorPicker();
-        setTransactionType(document.getElementById('transaction-type').value || 'ADD');
-        renderMonitor();
-        renderAudit();
-        renderMasterList();
-      }
+        function renderFieldList() {
+          const root = document.getElementById('field-list');
+          root.innerHTML = appData.fields.length ? appData.fields.map(field =>
+            '<span class="field-chip">' + escapeHtml(field.label) + ' · ' + escapeHtml(field.type) +
+            (field.required ? ' · required' : '') + '<button class="chip-remove" type="button" title="Remove field" aria-label="Remove ' +
+            escapeHtml(field.label) + '" data-remove-field="' + escapeHtml(field.id) + '">×</button></span>'
+          ).join('') : '<span class="hint">No extra fields yet.</span>';
+          root.querySelectorAll('[data-remove-field]').forEach(button => button.addEventListener('click', () => {
+            if (!window.confirm('Remove this field from future transaction forms? Existing transaction values will be preserved.')) return;
+            callServer('archiveFormField', [button.dataset.removeField], updateData, document.getElementById('field-status'));
+          }));
+          root.querySelectorAll('[data-edit-field]').forEach(button => button.addEventListener('click', () => editField(button.dataset.editField)));
+        }
 
-      function renderSummary() {
-        const names = new Map();
-        const total = Number.isFinite(Number(appData.availableFunds))
-          ? Number(appData.availableFunds)
-          : appData.transactions.reduce((balance, transaction) =>
-            balance + (transaction.type === 'ADD' ? transaction.amount : -transaction.amount), 0);
-        document.getElementById('total-balance').textContent = currency.format(total);
-        document.getElementById('monitor-count').textContent = String(appData.monitors.length);
-        appData.monitors.forEach(monitor => monitor.members.forEach(member => names.set(member.name.toLowerCase(), member.name)));
-        document.getElementById('member-count').textContent = String(names.size);
-        document.getElementById('member-options').innerHTML = [...names.values()].sort().map(name => '<option value="' + escapeHtml(name) + '"></option>').join('');
-      }
-
-      function renderCustomInputs(values) {
-        const root = document.getElementById('custom-fields');
-        const isDeduction = document.getElementById('transaction-type').value === 'DEDUCT';
-        const visibleFields = appData.fields.filter(field =>
-          !(isDeduction && String(field.label).trim().toLowerCase() === 'member'));
-        root.innerHTML = visibleFields.map(field => {
-          const id = 'custom-' + field.id;
-          const required = field.required ? ' required' : '';
-          let input;
-          if (field.type === 'select') {
-            input = '<select id="' + escapeHtml(id) + '"' + required + '><option value="">Choose…</option>' +
-              field.options.map(option => '<option value="' + escapeHtml(option) + '">' + escapeHtml(option) + '</option>').join('') + '</select>';
-          } else {
-            const type = ['number', 'date'].includes(field.type) ? field.type : 'text';
-            input = '<input id="' + escapeHtml(id) + '" type="' + type + '"' + required + (type === 'number' ? ' step="any"' : '') + '>';
+        function renderTransactions() {
+          const root = document.getElementById('transactions-table');
+          if (!appData.transactions.length) {
+            root.innerHTML = '<div class="empty">No transactions recorded yet.</div>';
+            return;
           }
-          return '<div class="field"><label for="' + escapeHtml(id) + '">' + escapeHtml(field.label) + (field.required ? ' *' : '') +
-            '</label>' + input + '</div>';
-        }).join('');
-        visibleFields.forEach(field => {
-          const input = document.getElementById('custom-' + field.id);
-          if (input && values[field.id] != null) input.value = values[field.id];
-        });
-      }
-
-      function renderFieldList() {
-        const root = document.getElementById('field-list');
-        root.innerHTML = appData.fields.length ? appData.fields.map(field =>
-          '<span class="field-chip">' + escapeHtml(field.label) + ' · ' + escapeHtml(field.type) +
-          (field.required ? ' · required' : '') + '<button class="chip-remove" type="button" title="Remove field" aria-label="Remove ' +
-          escapeHtml(field.label) + '" data-remove-field="' + escapeHtml(field.id) + '">×</button></span>'
-        ).join('') : '<span class="hint">No extra fields yet.</span>';
-        root.querySelectorAll('[data-remove-field]').forEach(button => button.addEventListener('click', () => {
-          if (!window.confirm('Remove this field from future transaction forms? Existing transaction values will be preserved.')) return;
-          callServer('archiveFormField', [button.dataset.removeField], updateData, document.getElementById('field-status'));
-        }));
-        root.querySelectorAll('[data-edit-field]').forEach(button => button.addEventListener('click', () => editField(button.dataset.editField)));
-      }
-
-      function renderTransactions() {
-        const root = document.getElementById('transactions-table');
-        if (!appData.transactions.length) {
-          root.innerHTML = '<div class="empty">No transactions recorded yet.</div>';
-          return;
+          const customHeaders = appData.fields;
+          const monitorNames = new Map(appData.monitors.map(monitor => [monitor.id, monitor.name]));
+          root.innerHTML = '<table><thead><tr><th>Date</th><th>Type</th><th>Member</th><th>Amount</th><th>Monitoring</th><th>Purpose / remarks</th>' +
+            customHeaders.map(field => '<th>' + escapeHtml(field.label) + '</th>').join('') +
+            '<th>Recorded by</th><th>Actions</th></tr></thead><tbody>' +
+            appData.transactions.map(transaction => '<tr><td>' + escapeHtml(transaction.date) + '</td><td><span class="badge ' +
+              (transaction.type === 'ADD' ? 'add' : 'deduct') + '">' + (transaction.type === 'ADD' ? 'Addition' : 'Deduction') +
+              '</span></td><td>' + escapeHtml(transaction.type === 'DEDUCT' ? '—' : transaction.member) + '</td><td class="amount ' +
+              (transaction.type === 'ADD' ? 'positive' : 'negative') + '">' +
+              currency.format(transaction.amount) + '</td><td>' + escapeHtml(monitorNames.get(transaction.monitorId) || '—') +
+              '</td><td>' + escapeHtml(transaction.purpose || '—') + '</td>' +
+              customHeaders.map(field => '<td>' + escapeHtml(transaction.customFields[field.id] || '—') + '</td>').join('') +
+              '<td>' + escapeHtml(transaction.recordedBy || '—') + '</td><td><div class="toolbar">' +
+              '<button class="btn small" type="button" data-edit-transaction="' + escapeHtml(transaction.id) + '">Edit</button>' +
+              '<button class="btn small danger" type="button" data-void-transaction="' + escapeHtml(transaction.id) + '">Void</button>' +
+              '</div></td></tr>').join('') + '</tbody></table>';
+          root.querySelectorAll('[data-edit-transaction]').forEach(button => button.addEventListener('click', () => editTransaction(button.dataset.editTransaction)));
+          root.querySelectorAll('[data-void-transaction]').forEach(button => button.addEventListener('click', () => {
+            const transaction = appData.transactions.find(item => item.id === button.dataset.voidTransaction);
+            const target = transaction && transaction.type === 'DEDUCT' ? ' from total funds' : ' for ' + (transaction ? transaction.member : '');
+            if (transaction && window.confirm('Void this ' + transaction.type.toLowerCase() + ' of ' + currency.format(transaction.amount) + target + '?')) {
+              callServer('voidTransaction', [transaction.id], updateData, document.getElementById('transaction-status'));
+            }
+          }));
         }
-        const customHeaders = appData.fields;
-        const monitorNames = new Map(appData.monitors.map(monitor => [monitor.id, monitor.name]));
-        root.innerHTML = '<table><thead><tr><th>Date</th><th>Type</th><th>Member</th><th>Amount</th><th>Monitoring</th><th>Purpose / remarks</th>' +
-          customHeaders.map(field => '<th>' + escapeHtml(field.label) + '</th>').join('') +
-          '<th>Recorded by</th><th>Actions</th></tr></thead><tbody>' +
-          appData.transactions.map(transaction => '<tr><td>' + escapeHtml(transaction.date) + '</td><td><span class="badge ' +
-            (transaction.type === 'ADD' ? 'add' : 'deduct') + '">' + (transaction.type === 'ADD' ? 'Addition' : 'Deduction') +
-            '</span></td><td>' + escapeHtml(transaction.type === 'DEDUCT' ? '—' : transaction.member) + '</td><td class="amount ' +
-            (transaction.type === 'ADD' ? 'positive' : 'negative') + '">' +
-            currency.format(transaction.amount) + '</td><td>' + escapeHtml(monitorNames.get(transaction.monitorId) || '—') +
-            '</td><td>' + escapeHtml(transaction.purpose || '—') + '</td>' +
-            customHeaders.map(field => '<td>' + escapeHtml(transaction.customFields[field.id] || '—') + '</td>').join('') +
-            '<td>' + escapeHtml(transaction.recordedBy || '—') + '</td><td><div class="toolbar">' +
-            '<button class="btn small" type="button" data-edit-transaction="' + escapeHtml(transaction.id) + '">Edit</button>' +
-            '<button class="btn small danger" type="button" data-void-transaction="' + escapeHtml(transaction.id) + '">Void</button>' +
-            '</div></td></tr>').join('') + '</tbody></table>';
-        root.querySelectorAll('[data-edit-transaction]').forEach(button => button.addEventListener('click', () => editTransaction(button.dataset.editTransaction)));
-        root.querySelectorAll('[data-void-transaction]').forEach(button => button.addEventListener('click', () => {
-          const transaction = appData.transactions.find(item => item.id === button.dataset.voidTransaction);
-          const target = transaction && transaction.type === 'DEDUCT' ? ' from total funds' : ' for ' + (transaction ? transaction.member : '');
-          if (transaction && window.confirm('Void this ' + transaction.type.toLowerCase() + ' of ' + currency.format(transaction.amount) + target + '?')) {
-            callServer('voidTransaction', [transaction.id], updateData, document.getElementById('transaction-status'));
-          }
-        }));
-      }
 
-      function submitTransaction(event) {
-        event.preventDefault();
-        const customFields = {};
-        appData.fields.forEach(field => {
-          const input = document.getElementById('custom-' + field.id);
-          customFields[field.id] = input ? input.value : '';
-        });
-        const payload = {
-          id: document.getElementById('transaction-id').value,
-          type: document.getElementById('transaction-type').value,
-          monitorId: document.getElementById('transaction-monitor').value,
-          member: document.getElementById('transaction-type').value === 'ADD' ? document.getElementById('transaction-member').value : '',
-          amount: document.getElementById('transaction-amount').value,
-          date: document.getElementById('transaction-date').value,
-          purpose: document.getElementById('transaction-purpose').value,
-          recordedBy: document.getElementById('transaction-recorded-by').value,
-          customFields: customFields
-        };
-        callServer('saveTransaction', [payload], data => {
-          updateData(data);
-          resetTransactionForm();
-          setStatus(document.getElementById('transaction-status'), 'Transaction saved.', false, true);
-        }, document.getElementById('transaction-status'));
-      }
-
-      function editTransaction(id) {
-        const transaction = appData.transactions.find(item => item.id === id);
-        if (!transaction) return;
-        document.getElementById('transaction-id').value = transaction.id;
-        setTransactionType(transaction.type);
-        document.getElementById('transaction-monitor').value = transaction.monitorId;
-        document.getElementById('transaction-member').value = transaction.member;
-        document.getElementById('transaction-amount').value = transaction.amount;
-        document.getElementById('transaction-date').value = transaction.date;
-        document.getElementById('transaction-purpose').value = transaction.purpose;
-        document.getElementById('transaction-recorded-by').value = transaction.recordedBy;
-        renderCustomInputs(transaction.customFields);
-        document.getElementById('transaction-heading').textContent = 'Edit fund transaction';
-        document.getElementById('transaction-submit').textContent = 'Save changes';
-        document.getElementById('transaction-cancel').hidden = false;
-        document.getElementById('transaction-form').scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-
-      function resetTransactionForm() {
-        document.getElementById('transaction-form').reset();
-        document.getElementById('transaction-id').value = '';
-        document.getElementById('transaction-date').value = toDateInput(new Date());
-        document.getElementById('transaction-recorded-by').value = '';
-        const monitorPicker = document.getElementById('monitor-picker');
-        if (monitorPicker.value) document.getElementById('transaction-monitor').value = monitorPicker.value;
-        setTransactionType('ADD');
-        document.getElementById('transaction-heading').textContent = 'Record a fund transaction';
-        document.getElementById('transaction-submit').textContent = 'Save transaction';
-        document.getElementById('transaction-cancel').hidden = true;
-        renderCustomInputs({});
-      }
-
-      function submitField(event) {
-        event.preventDefault();
-        const field = {
-          id: document.getElementById('field-id').value,
-          label: document.getElementById('field-label').value,
-          type: document.getElementById('field-type').value,
-          required: document.getElementById('field-required').value === 'true',
-          options: document.getElementById('field-options').value
-        };
-        callServer('saveFormField', [field], data => {
-          updateData(data);
-          resetFieldForm();
-          setStatus(document.getElementById('field-status'), field.id ? 'Form field updated.' : 'Form field added.', false, true);
-        }, document.getElementById('field-status'));
-      }
-
-      function editField(id) {
-        const field = appData.fields.find(item => item.id === id);
-        if (!field) return;
-        document.getElementById('field-id').value = field.id;
-        document.getElementById('field-label').value = field.label;
-        document.getElementById('field-type').value = field.type;
-        document.getElementById('field-required').value = field.required ? 'true' : 'false';
-        document.getElementById('field-options').value = field.options.join('\n');
-        document.getElementById('field-options-wrap').hidden = field.type !== 'select';
-        document.querySelector('#field-form button[type="submit"]').textContent = 'Save field';
-        document.getElementById('field-cancel').hidden = false;
-      }
-
-      function resetFieldForm() {
-        document.getElementById('field-form').reset();
-        document.getElementById('field-id').value = '';
-        document.getElementById('field-options-wrap').hidden = true;
-        document.querySelector('#field-form button[type="submit"]').textContent = 'Add field';
-        document.getElementById('field-cancel').hidden = true;
-      }
-
-      function renderMonitorPicker() {
-        const picker = document.getElementById('monitor-picker');
-        const previous = picker.value;
-        picker.innerHTML = appData.monitors.length
-          ? appData.monitors.map(monitor => '<option value="' + escapeHtml(monitor.id) + '">' + escapeHtml(monitor.name) + '</option>').join('')
-          : '<option value="">Create a monitoring form first</option>';
-        if (appData.monitors.some(monitor => monitor.id === previous)) picker.value = previous;
-        else if (appData.monitors.length) picker.value = appData.monitors[0].id;
-        picker.disabled = appData.monitors.length === 0;
-        document.getElementById('monitor-controls').hidden = !appData.monitors.length;
-        if (!appData.monitors.length) {
-          document.getElementById('monitor-title').textContent = 'Monitoring table';
-          document.getElementById('monitor-table').innerHTML = '<div class="empty">Create a monitoring form to get started.</div>';
-        }
-      }
-
-      function currentMonitor() {
-        return appData.monitors.find(monitor => monitor.id === document.getElementById('monitor-picker').value);
-      }
-
-      function renderTransactionMonitorPicker() {
-        const picker = document.getElementById('transaction-monitor');
-        const previous = picker.value;
-        picker.innerHTML = '<option value="">Choose a monitoring form…</option>' +
-          appData.monitors.map(monitor => '<option value="' + escapeHtml(monitor.id) + '">' + escapeHtml(monitor.name) + '</option>').join('');
-        if (appData.monitors.some(monitor => monitor.id === previous)) picker.value = previous;
-        else if (appData.monitors.length) picker.value = appData.monitors[0].id;
-        picker.disabled = appData.monitors.length === 0;
-        picker.required = appData.monitors.length > 0;
-      }
-
-      function renderMonitor() {
-        const monitor = currentMonitor();
-        if (!monitor) {
-          document.getElementById('monitor-controls').hidden = true;
-          document.getElementById('monitor-table').innerHTML = '<div class="empty">Create a monitoring form to get started.</div>';
-          return;
-        }
-        document.getElementById('monitor-controls').hidden = false;
-        document.getElementById('monitor-title').textContent = monitor.name;
-        const root = document.getElementById('monitor-table');
-        if (!monitor.dates.length) {
-          root.innerHTML = '<div class="empty">Add a date column or record a fund transaction to start tracking.</div>';
-          return;
-        }
-        root.innerHTML = '<table class="monitor-table"><thead><tr><th>Member</th>' +
-          monitor.dates.map(date => '<th>' + escapeHtml(date) + '</th>').join('') + '<th>Total</th>' +
-          '</tr></thead><tbody>' + monitor.members.map(member => '<tr><td class="member-cell">' + escapeHtml(member.name) + '</td>' +
-            monitor.dates.map(date => {
-              const amount = Number(member.values[date] || 0);
-              return '<td class="amount">' + currency.format(amount) + '</td>';
-            }).join('') + '<td class="amount">' + currency.format(member.total || 0) + '</td></tr>').join('') +
-          '<tr class="deduction-row"><td class="member-cell">General deductions</td>' +
-          monitor.dates.map(date => {
-            const amount = Number(monitor.deductionsByDate[date] || 0);
-            return '<td class="amount">' + (amount ? '−' : '') + currency.format(amount) + '</td>';
-          }).join('') + '<td class="amount">' +
-          (monitor.deductionTotal ? '−' : '') + currency.format(monitor.deductionTotal || 0) + '</td></tr>' +
-          '</tbody><tfoot><tr><th>Net total</th>' +
-          monitor.dates.map(date => '<td class="amount">' + currency.format(monitor.totals[date] || 0) + '</td>').join('') +
-          '<td class="amount">' + currency.format(monitor.total || 0) + '</td></tr></tfoot></table>';
-      }
-
-      function refreshMonitorList() {
-        const status = document.getElementById('monitor-status');
-        setStatus(status, 'Refreshing monitoring forms…');
-        apiCall('getAppData')
-          .then(data => {
+        function submitTransaction(event) {
+          event.preventDefault();
+          const customFields = {};
+          appData.fields.forEach(field => {
+            const input = document.getElementById('custom-' + field.id);
+            customFields[field.id] = input ? input.value : '';
+          });
+          const payload = {
+            id: document.getElementById('transaction-id').value,
+            type: document.getElementById('transaction-type').value,
+            monitorId: document.getElementById('transaction-monitor').value,
+            member: document.getElementById('transaction-type').value === 'ADD' ? document.getElementById('transaction-member').value : '',
+            amount: document.getElementById('transaction-amount').value,
+            date: document.getElementById('transaction-date').value,
+            purpose: document.getElementById('transaction-purpose').value,
+            recordedBy: document.getElementById('transaction-recorded-by').value,
+            customFields: customFields
+          };
+          callServer('saveTransaction', [payload], data => {
             updateData(data);
-            setStatus(status, 'Monitoring forms refreshed.', false, true);
-          })
-          .catch(error => {
-            setStatus(status, error && error.message ? error.message : 'Could not refresh monitoring forms.', true);
-          });
-      }
+            resetTransactionForm();
+            setStatus(document.getElementById('transaction-status'), 'Transaction saved.', false, true);
+          }, document.getElementById('transaction-status'));
+        }
 
-      async function copyMonitorTable() {
-        const monitor = currentMonitor();
-        if (!monitor) return;
-        const rows = [['Member'].concat(monitor.dates, ['Total'])];
-        monitor.members.forEach(member => {
-          const values = monitor.dates.map(date => currency.format(Number(member.values[date] || 0)));
-          rows.push([member.name].concat(values, [currency.format(member.total || 0)]));
-        });
-        rows.push(['General deductions'].concat(
-          monitor.dates.map(date => {
-            const amount = Number(monitor.deductionsByDate[date] || 0);
-            return (amount ? '-' : '') + currency.format(amount);
-          }),
-          [(monitor.deductionTotal ? '-' : '') + currency.format(monitor.deductionTotal || 0)]
-        ));
-        rows.push(['Net total'].concat(
-          monitor.dates.map(date => currency.format(monitor.totals[date] || 0)),
-          [currency.format(monitor.total || 0)]
-        ));
-        const text = rows.map(row => row.join('\t')).join('\n');
-        try {
-          if (navigator.clipboard && navigator.clipboard.writeText) {
-            try {
-              await navigator.clipboard.writeText(text);
-            } catch (clipboardError) {
+        function editTransaction(id) {
+          const transaction = appData.transactions.find(item => item.id === id);
+          if (!transaction) return;
+          document.getElementById('transaction-id').value = transaction.id;
+          setTransactionType(transaction.type);
+          document.getElementById('transaction-monitor').value = transaction.monitorId;
+          document.getElementById('transaction-member').value = transaction.member;
+          document.getElementById('transaction-amount').value = transaction.amount;
+          document.getElementById('transaction-date').value = transaction.date;
+          document.getElementById('transaction-purpose').value = transaction.purpose;
+          document.getElementById('transaction-recorded-by').value = transaction.recordedBy;
+          renderCustomInputs(transaction.customFields);
+          document.getElementById('transaction-heading').textContent = 'Edit fund transaction';
+          document.getElementById('transaction-submit').textContent = 'Save changes';
+          document.getElementById('transaction-cancel').hidden = false;
+          document.getElementById('transaction-form').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        function resetTransactionForm() {
+          document.getElementById('transaction-form').reset();
+          document.getElementById('transaction-id').value = '';
+          document.getElementById('transaction-date').value = toDateInput(new Date());
+          document.getElementById('transaction-recorded-by').value = '';
+          const monitorPicker = document.getElementById('monitor-picker');
+          if (monitorPicker.value) document.getElementById('transaction-monitor').value = monitorPicker.value;
+          setTransactionType('ADD');
+          document.getElementById('transaction-heading').textContent = 'Record a fund transaction';
+          document.getElementById('transaction-submit').textContent = 'Save transaction';
+          document.getElementById('transaction-cancel').hidden = true;
+          renderCustomInputs({});
+        }
+
+        function submitField(event) {
+          event.preventDefault();
+          const field = {
+            id: document.getElementById('field-id').value,
+            label: document.getElementById('field-label').value,
+            type: document.getElementById('field-type').value,
+            required: document.getElementById('field-required').value === 'true',
+            options: document.getElementById('field-options').value
+          };
+          callServer('saveFormField', [field], data => {
+            updateData(data);
+            resetFieldForm();
+            setStatus(document.getElementById('field-status'), field.id ? 'Form field updated.' : 'Form field added.', false, true);
+          }, document.getElementById('field-status'));
+        }
+
+        function editField(id) {
+          const field = appData.fields.find(item => item.id === id);
+          if (!field) return;
+          document.getElementById('field-id').value = field.id;
+          document.getElementById('field-label').value = field.label;
+          document.getElementById('field-type').value = field.type;
+          document.getElementById('field-required').value = field.required ? 'true' : 'false';
+          document.getElementById('field-options').value = field.options.join('\n');
+          document.getElementById('field-options-wrap').hidden = field.type !== 'select';
+          document.querySelector('#field-form button[type="submit"]').textContent = 'Save field';
+          document.getElementById('field-cancel').hidden = false;
+        }
+
+        function resetFieldForm() {
+          document.getElementById('field-form').reset();
+          document.getElementById('field-id').value = '';
+          document.getElementById('field-options-wrap').hidden = true;
+          document.querySelector('#field-form button[type="submit"]').textContent = 'Add field';
+          document.getElementById('field-cancel').hidden = true;
+        }
+
+        function renderMonitorPicker() {
+          const picker = document.getElementById('monitor-picker');
+          const previous = picker.value;
+          picker.innerHTML = appData.monitors.length
+            ? appData.monitors.map(monitor => '<option value="' + escapeHtml(monitor.id) + '">' + escapeHtml(monitor.name) + '</option>').join('')
+            : '<option value="">Create a monitoring form first</option>';
+          if (appData.monitors.some(monitor => monitor.id === previous)) picker.value = previous;
+          else if (appData.monitors.length) picker.value = appData.monitors[0].id;
+          picker.disabled = appData.monitors.length === 0;
+          document.getElementById('monitor-controls').hidden = !appData.monitors.length;
+          if (!appData.monitors.length) {
+            document.getElementById('monitor-title').textContent = 'Monitoring table';
+            document.getElementById('monitor-table').innerHTML = '<div class="empty">Create a monitoring form to get started.</div>';
+          }
+        }
+
+        function currentMonitor() {
+          return appData.monitors.find(monitor => monitor.id === document.getElementById('monitor-picker').value);
+        }
+
+        function renderTransactionMonitorPicker() {
+          const picker = document.getElementById('transaction-monitor');
+          const previous = picker.value;
+          picker.innerHTML = '<option value="">Choose a monitoring form…</option>' +
+            appData.monitors.map(monitor => '<option value="' + escapeHtml(monitor.id) + '">' + escapeHtml(monitor.name) + '</option>').join('');
+          if (appData.monitors.some(monitor => monitor.id === previous)) picker.value = previous;
+          else if (appData.monitors.length) picker.value = appData.monitors[0].id;
+          picker.disabled = appData.monitors.length === 0;
+          picker.required = appData.monitors.length > 0;
+        }
+
+        function renderMonitor() {
+          const monitor = currentMonitor();
+          if (!monitor) {
+            document.getElementById('monitor-controls').hidden = true;
+            document.getElementById('monitor-table').innerHTML = '<div class="empty">Create a monitoring form to get started.</div>';
+            return;
+          }
+          document.getElementById('monitor-controls').hidden = false;
+          document.getElementById('monitor-title').textContent = monitor.name;
+          const root = document.getElementById('monitor-table');
+          if (!monitor.dates.length) {
+            root.innerHTML = '<div class="empty">Add a date column or record a fund transaction to start tracking.</div>';
+            return;
+          }
+          root.innerHTML = '<table class="monitor-table"><thead><tr><th>Member</th>' +
+            monitor.dates.map(date => '<th>' + escapeHtml(date) + '</th>').join('') + '<th>Total</th>' +
+            '</tr></thead><tbody>' + monitor.members.map(member => '<tr><td class="member-cell">' + escapeHtml(member.name) + '</td>' +
+              monitor.dates.map(date => {
+                const amount = Number(member.values[date] || 0);
+                return '<td class="amount">' + currency.format(amount) + '</td>';
+              }).join('') + '<td class="amount">' + currency.format(member.total || 0) + '</td></tr>').join('') +
+            '<tr class="deduction-row"><td class="member-cell">General deductions</td>' +
+            monitor.dates.map(date => {
+              const amount = Number(monitor.deductionsByDate[date] || 0);
+              return '<td class="amount">' + (amount ? '−' : '') + currency.format(amount) + '</td>';
+            }).join('') + '<td class="amount">' +
+            (monitor.deductionTotal ? '−' : '') + currency.format(monitor.deductionTotal || 0) + '</td></tr>' +
+            '</tbody><tfoot><tr><th>Net total</th>' +
+            monitor.dates.map(date => '<td class="amount">' + currency.format(monitor.totals[date] || 0) + '</td>').join('') +
+            '<td class="amount">' + currency.format(monitor.total || 0) + '</td></tr></tfoot></table>';
+        }
+
+        function refreshMonitorList() {
+          const status = document.getElementById('monitor-status');
+          setStatus(status, 'Refreshing monitoring forms…');
+          apiCall('getAppData')
+            .then(data => {
+              updateData(data);
+              setStatus(status, 'Monitoring forms refreshed.', false, true);
+            })
+            .catch(error => {
+              setStatus(status, error && error.message ? error.message : 'Could not refresh monitoring forms.', true);
+            });
+        }
+
+        async function copyMonitorTable() {
+          const monitor = currentMonitor();
+          if (!monitor) return;
+          const rows = [['Member'].concat(monitor.dates, ['Total'])];
+          monitor.members.forEach(member => {
+            const values = monitor.dates.map(date => currency.format(Number(member.values[date] || 0)));
+            rows.push([member.name].concat(values, [currency.format(member.total || 0)]));
+          });
+          rows.push(['General deductions'].concat(
+            monitor.dates.map(date => {
+              const amount = Number(monitor.deductionsByDate[date] || 0);
+              return (amount ? '-' : '') + currency.format(amount);
+            }),
+            [(monitor.deductionTotal ? '-' : '') + currency.format(monitor.deductionTotal || 0)]
+          ));
+          rows.push(['Net total'].concat(
+            monitor.dates.map(date => currency.format(monitor.totals[date] || 0)),
+            [currency.format(monitor.total || 0)]
+          ));
+          const text = rows.map(row => row.join('\t')).join('\n');
+          try {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+              try {
+                await navigator.clipboard.writeText(text);
+              } catch (clipboardError) {
+                copyUsingFallback(text);
+              }
+            } else {
               copyUsingFallback(text);
             }
-          } else {
-            copyUsingFallback(text);
+            setStatus(document.getElementById('monitor-status'), 'Monitoring table and totals copied.', false, true);
+          } catch (error) {
+            setStatus(document.getElementById('monitor-status'), 'Could not copy the table. Check clipboard permissions and try again.', true);
           }
-          setStatus(document.getElementById('monitor-status'), 'Monitoring table and totals copied.', false, true);
-        } catch (error) {
-          setStatus(document.getElementById('monitor-status'), 'Could not copy the table. Check clipboard permissions and try again.', true);
         }
-      }
 
-      function copyUsingFallback(text) {
-        const helper = document.createElement('textarea');
-        helper.value = text;
-        helper.style.position = 'fixed';
-        helper.style.opacity = '0';
-        document.body.appendChild(helper);
-        helper.select();
-        const copied = document.execCommand('copy');
-        helper.remove();
-        if (!copied) throw new Error('Clipboard access was denied.');
-      }
-
-      function submitMonitor(event) {
-        event.preventDefault();
-        callServer('createMonitoring', [document.getElementById('monitor-name').value], data => {
-          updateData(data);
-          document.getElementById('monitor-name').value = '';
-          setStatus(document.getElementById('monitor-create-status'), 'Monitoring created.', false, true);
-          document.getElementById('monitor-picker').value = data.monitors[data.monitors.length - 1].id;
-          document.getElementById('transaction-monitor').value = document.getElementById('monitor-picker').value;
-          renderMonitor();
-        }, document.getElementById('monitor-create-status'));
-      }
-
-      function submitMonitorMember(event) {
-        event.preventDefault();
-        const monitor = currentMonitor();
-        if (!monitor) return;
-        callServer('addMonitoringMember', [monitor.id, document.getElementById('monitor-member-name').value], data => {
-          updateData(data);
-          document.getElementById('monitor-member-name').value = '';
-          document.getElementById('monitor-picker').value = monitor.id;
-          renderMonitor();
-          setStatus(document.getElementById('monitor-status'), 'Member added.', false, true);
-        }, document.getElementById('monitor-status'));
-      }
-
-      function submitMonitorDate(event) {
-        event.preventDefault();
-        const monitor = currentMonitor();
-        if (!monitor) return;
-        callServer('addMonitoringDate', [monitor.id, document.getElementById('monitor-date').value], data => {
-          updateData(data);
-          document.getElementById('monitor-picker').value = monitor.id;
-          renderMonitor();
-          setStatus(document.getElementById('monitor-status'), 'Date column added.', false, true);
-        }, document.getElementById('monitor-status'));
-      }
-
-      function archiveCurrentMonitor() {
-        const monitor = currentMonitor();
-        if (!monitor || !window.confirm('Archive "' + monitor.name + '"? It will no longer appear in the active monitoring list.')) return;
-        callServer('archiveMonitoring', [monitor.id], data => {
-          updateData(data);
-          setStatus(document.getElementById('monitor-status'), 'Monitoring archived.', false, true);
-        }, document.getElementById('monitor-status'));
-      }
-
-      function renderAudit() {
-        const root = document.getElementById('audit-table');
-        if (!appData.audit.length) {
-          root.innerHTML = '<div class="empty">No activity has been logged yet.</div>';
-          return;
+        function copyUsingFallback(text) {
+          const helper = document.createElement('textarea');
+          helper.value = text;
+          helper.style.position = 'fixed';
+          helper.style.opacity = '0';
+          document.body.appendChild(helper);
+          helper.select();
+          const copied = document.execCommand('copy');
+          helper.remove();
+          if (!copied) throw new Error('Clipboard access was denied.');
         }
-        root.innerHTML = '<table><thead><tr><th>When</th><th>Who</th><th>Action</th><th>Item</th><th>Details</th></tr></thead><tbody>' +
-          appData.audit.map(item => '<tr><td>' + escapeHtml(formatDateTime(item.timestamp)) + '</td><td>' + escapeHtml(item.actor) +
-            '</td><td>' + escapeHtml(item.action) + '</td><td>' + escapeHtml(item.entity) + '</td><td class="audit-details">' +
-            escapeHtml(item.details) + '</td></tr>').join('') + '</tbody></table>';
-      }
 
-      function renderMasterList() {
-        const root = document.getElementById('master-list-table');
-        const query = document.getElementById('member-search').value.trim().toLowerCase();
-        const members = new Map();
-        appData.monitors.forEach(monitor => {
-          monitor.members.forEach(member => {
-            const key = member.name.trim().toLocaleLowerCase();
-            if (!key) return;
-            if (!members.has(key)) {
-              members.set(key, { name: member.name, plakaso: member.plakaso || '' });
-            }
-            const entry = members.get(key);
-            if (!entry.plakaso && member.plakaso) entry.plakaso = member.plakaso;
+        function submitMonitor(event) {
+          event.preventDefault();
+          callServer('createMonitoring', [document.getElementById('monitor-name').value], data => {
+            updateData(data);
+            document.getElementById('monitor-name').value = '';
+            setStatus(document.getElementById('monitor-create-status'), 'Monitoring created.', false, true);
+            document.getElementById('monitor-picker').value = data.monitors[data.monitors.length - 1].id;
+            document.getElementById('transaction-monitor').value = document.getElementById('monitor-picker').value;
+            renderMonitor();
+          }, document.getElementById('monitor-create-status'));
+        }
+
+        function submitMonitorMember(event) {
+          event.preventDefault();
+          const monitor = currentMonitor();
+          if (!monitor) return;
+          callServer('addMonitoringMember', [monitor.id, document.getElementById('monitor-member-name').value], data => {
+            updateData(data);
+            document.getElementById('monitor-member-name').value = '';
+            document.getElementById('monitor-picker').value = monitor.id;
+            renderMonitor();
+            setStatus(document.getElementById('monitor-status'), 'Member added.', false, true);
+          }, document.getElementById('monitor-status'));
+        }
+
+        function submitMonitorDate(event) {
+          event.preventDefault();
+          const monitor = currentMonitor();
+          if (!monitor) return;
+          callServer('addMonitoringDate', [monitor.id, document.getElementById('monitor-date').value], data => {
+            updateData(data);
+            document.getElementById('monitor-picker').value = monitor.id;
+            renderMonitor();
+            setStatus(document.getElementById('monitor-status'), 'Date column added.', false, true);
+          }, document.getElementById('monitor-status'));
+        }
+
+        function archiveCurrentMonitor() {
+          const monitor = currentMonitor();
+          if (!monitor || !window.confirm('Archive "' + monitor.name + '"? It will no longer appear in the active monitoring list.')) return;
+          callServer('archiveMonitoring', [monitor.id], data => {
+            updateData(data);
+            setStatus(document.getElementById('monitor-status'), 'Monitoring archived.', false, true);
+          }, document.getElementById('monitor-status'));
+        }
+
+        function renderAudit() {
+          const root = document.getElementById('audit-table');
+          if (!appData.audit.length) {
+            root.innerHTML = '<div class="empty">No activity has been logged yet.</div>';
+            return;
+          }
+          root.innerHTML = '<table><thead><tr><th>When</th><th>Who</th><th>Action</th><th>Item</th><th>Details</th></tr></thead><tbody>' +
+            appData.audit.map(item => '<tr><td>' + escapeHtml(formatDateTime(item.timestamp)) + '</td><td>' + escapeHtml(item.actor) +
+              '</td><td>' + escapeHtml(item.action) + '</td><td>' + escapeHtml(item.entity) + '</td><td class="audit-details">' +
+              escapeHtml(item.details) + '</td></tr>').join('') + '</tbody></table>';
+        }
+
+        function renderMasterList() {
+          const root = document.getElementById('master-list-table');
+          const query = document.getElementById('member-search').value.trim().toLowerCase();
+          const members = new Map();
+          appData.monitors.forEach(monitor => {
+            monitor.members.forEach(member => {
+              const key = member.name.trim().toLocaleLowerCase();
+              if (!key) return;
+              if (!members.has(key)) {
+                members.set(key, { name: member.name, plakaso: member.plakaso || '' });
+              }
+              const entry = members.get(key);
+              if (!entry.plakaso && member.plakaso) entry.plakaso = member.plakaso;
+            });
           });
-        });
-        const rows = Array.from(members.values())
-          .filter(member => !query || member.name.toLowerCase().includes(query) ||
-            member.plakaso.toLowerCase().includes(query))
-          .sort((left, right) => left.name.localeCompare(right.name));
-        document.getElementById('master-list-count').textContent =
-          rows.length + (rows.length === 1 ? ' active member' : ' active members') + (query ? ' found' : '');
-        if (!rows.length) {
-          root.innerHTML = '<div class="empty">' + (query ? 'No members match that search.' : 'No members found. Add members to a monitoring form.') + '</div>';
-          return;
+          const rows = Array.from(members.values())
+            .filter(member => !query || member.name.toLowerCase().includes(query) ||
+              member.plakaso.toLowerCase().includes(query))
+            .sort((left, right) => left.name.localeCompare(right.name));
+          document.getElementById('master-list-count').textContent =
+            rows.length + (rows.length === 1 ? ' active member' : ' active members') + (query ? ' found' : '');
+          if (!rows.length) {
+            root.innerHTML = '<div class="empty">' + (query ? 'No members match that search.' : 'No members found. Add members to a monitoring form.') + '</div>';
+            return;
+          }
+          root.innerHTML = '<table class="master-list-table"><thead><tr><th>Name</th><th>Plakaso</th></tr></thead><tbody>' +
+            rows.map(member => '<tr><td>' + escapeHtml(member.name) + '</td><td>' +
+              escapeHtml(member.plakaso || '—') + '</td></tr>').join('') +
+            '</tbody></table>';
         }
-        root.innerHTML = '<table class="master-list-table"><thead><tr><th>Name</th><th>Plakaso</th></tr></thead><tbody>' +
-          rows.map(member => '<tr><td>' + escapeHtml(member.name) + '</td><td>' +
-            escapeHtml(member.plakaso || '—') + '</td></tr>').join('') +
-          '</tbody></table>';
-      }
 
-      function updateData(data) {
-        appData = data;
-        renderApp();
-      }
-
-      function setTransactionType(type) {
-        const customValues = {};
-        appData.fields.forEach(field => {
-          const input = document.getElementById('custom-' + field.id);
-          if (input) customValues[field.id] = input.value;
-        });
-        document.getElementById('transaction-type').value = type;
-        document.querySelectorAll('[data-transaction-type]').forEach(button => {
-          button.classList.toggle('active', button.dataset.transactionType === type);
-        });
-        renderCustomInputs(customValues);
-        const isDeduction = type === 'DEDUCT';
-        const hasMonitors = appData.monitors.length > 0;
-        const memberField = document.getElementById('transaction-member-field');
-        const monitorField = document.getElementById('transaction-monitor-field');
-        const memberInput = document.getElementById('transaction-member');
-        const monitorInput = document.getElementById('transaction-monitor');
-        memberField.hidden = isDeduction;
-        monitorField.hidden = !hasMonitors;
-        memberInput.disabled = isDeduction;
-        memberInput.required = !isDeduction;
-        monitorInput.disabled = !hasMonitors;
-        monitorInput.required = hasMonitors;
-        if (!document.getElementById('transaction-id').value) {
-          document.getElementById('transaction-heading').textContent = type === 'ADD' ? 'Record a fund addition' : 'Deduct from total funds';
-          document.getElementById('transaction-submit').textContent = type === 'ADD' ? 'Save addition' : 'Save deduction';
+        function updateData(data) {
+          appData = data;
+          renderApp();
         }
-      }
 
-      function setStatus(element, message, isError, isSuccess) {
-        if (!element) return;
-        element.textContent = message;
-        element.classList.toggle('error', Boolean(isError));
-        element.classList.toggle('success', Boolean(isSuccess));
-      }
+        function setTransactionType(type) {
+          const customValues = {};
+          appData.fields.forEach(field => {
+            const input = document.getElementById('custom-' + field.id);
+            if (input) customValues[field.id] = input.value;
+          });
+          document.getElementById('transaction-type').value = type;
+          document.querySelectorAll('[data-transaction-type]').forEach(button => {
+            button.classList.toggle('active', button.dataset.transactionType === type);
+          });
+          renderCustomInputs(customValues);
+          const isDeduction = type === 'DEDUCT';
+          const hasMonitors = appData.monitors.length > 0;
+          const memberField = document.getElementById('transaction-member-field');
+          const monitorField = document.getElementById('transaction-monitor-field');
+          const memberInput = document.getElementById('transaction-member');
+          const monitorInput = document.getElementById('transaction-monitor');
+          memberField.hidden = isDeduction;
+          monitorField.hidden = !hasMonitors;
+          memberInput.disabled = isDeduction;
+          memberInput.required = !isDeduction;
+          monitorInput.disabled = !hasMonitors;
+          monitorInput.required = hasMonitors;
+          if (!document.getElementById('transaction-id').value) {
+            document.getElementById('transaction-heading').textContent = type === 'ADD' ? 'Record a fund addition' : 'Deduct from total funds';
+            document.getElementById('transaction-submit').textContent = type === 'ADD' ? 'Save addition' : 'Save deduction';
+          }
+        }
 
-      function escapeHtml(value) {
-        return String(value == null ? '' : value).replace(/[&<>"']/g, character => ({
-          '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-        })[character]);
-      }
+        function setStatus(element, message, isError, isSuccess) {
+          if (!element) return;
+          element.textContent = message;
+          element.classList.toggle('error', Boolean(isError));
+          element.classList.toggle('success', Boolean(isSuccess));
+        }
 
-      function toDateInput(date) {
-        const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
-        return local.toISOString().slice(0, 10);
-      }
+        function escapeHtml(value) {
+          return String(value == null ? '' : value).replace(/[&<>"']/g, character => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+          })[character]);
+        }
 
-      function formatDateTime(value) {
-        if (!value) return '—';
-        const date = new Date(value);
-        return isNaN(date.getTime()) ? value : date.toLocaleString();
-      }
-    </script>
+        function toDateInput(date) {
+          const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+          return local.toISOString().slice(0, 10);
+        }
+
+        function formatDateTime(value) {
+          if (!value) return '—';
+          const date = new Date(value);
+          return isNaN(date.getTime()) ? value : date.toLocaleString();
+        }
+      </script>
+    </div>
   </body>
 </html>
