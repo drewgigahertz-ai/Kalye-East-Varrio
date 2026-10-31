@@ -1,10 +1,6 @@
 const SPREADSHEET_ID = '1bK_remWm6O5Jj4p37stkf4vCi3jV0p4zyh5U2wiM-QU';
 
 const TABLES = {
-  accounts: {
-    name: 'ACCOUNTS',
-    headers: ['username', 'password']
-  },
   transactions: {
     name: 'FT Transactions',
     headers: ['id', 'createdAt', 'updatedAt', 'type', 'member', 'amount', 'date', 'purpose', 'recordedBy', 'customFields', 'status', 'monitorId']
@@ -49,7 +45,6 @@ function doPost(event) {
     const methods = Object.assign(Object.create(null), {
       getAppData: getAppData,
       getBranding: getBranding,
-      login: login,
       saveFormField: saveFormField,
       archiveFormField: archiveFormField,
       saveTransaction: saveTransaction,
@@ -68,38 +63,6 @@ function doPost(event) {
       error: error && error.message ? error.message : 'The tracker request failed.'
     }));
   }
-}
-
-function login(username, password) {
-  ensureTables_();
-  const normalize = value => String(value == null ? '' : value)
-    .replace(/\r?\n/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-
-  const cleanUser = normalize(username).toLowerCase();
-  const cleanPass = normalize(password);
-
-  if (!cleanUser || !cleanPass) {
-    throw new Error('Enter both username and password.');
-  }
-
-  const accounts = getRows_('accounts').filter(row => normalize(row.username) || normalize(row.password));
-  const matched = accounts.find(row => {
-    const sheetUser = normalize(row.username).toLowerCase();
-    const sheetPass = normalize(row.password);
-    return sheetUser === cleanUser && sheetPass === cleanPass;
-  });
-
-  if (!matched) {
-    throw new Error('Invalid username or password.');
-  }
-
-  return {
-    ok: true,
-    username: normalize(username),
-    message: 'Login successful.'
-  };
 }
 
 function getAppData() {
