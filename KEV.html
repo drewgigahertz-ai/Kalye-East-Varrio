@@ -147,189 +147,106 @@
       .login-status.error { color: #ff8a96; }
       .login-status.success { color: #6fe9ba; }
       .hidden { display: none !important; }
+
+      .login-layout {
+        display: grid;
+        grid-template-columns: 1.2fr 0.8fr;
+        width: min(1100px, 100%);
+        min-height: 700px;
+        background: rgba(8, 15, 24, 0.76);
+        border: 1px solid rgba(166, 191, 221, 0.18);
+        border-radius: 28px;
+        box-shadow: 0 35px 80px rgba(0, 0, 0, 0.32);
+        overflow: hidden;
+      }
+      .login-visual {
+        position: relative;
+        display: flex; align-items: center; justify-content: center;
+        padding: 42px;
+        background:
+          radial-gradient(circle at 50% 30%, rgba(95, 139, 255, 0.25), transparent 30%),
+          linear-gradient(135deg, rgba(8, 15, 25, 0.95), rgba(10, 20, 35, 0.92));
+      }
+      .login-visual::before {
+        content: "";
+        position: absolute; inset: 0;
+        background-image: linear-gradient(rgba(103, 133, 186, 0.08), rgba(103, 133, 186, 0.08));
+        background-size: 18px 18px;
+        mask-image: radial-gradient(circle at center, black 45%, transparent 100%);
+      }
+      .login-visual-inner {
+        position: relative; z-index: 1; display: grid; justify-items: center; gap: 16px; text-align: center;
+      }
+      .login-logo-wrap {
+        width: 170px; height: 170px; display: grid; place-items: center; border-radius: 34px;
+        background: rgba(255, 255, 255, 0.07); border: 1px solid rgba(255, 255, 255, 0.12);
+        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.22);
+      }
+      .login-logo-wrap img {
+        width: 112px; height: 112px; object-fit: contain; display: block;
+      }
+      .login-fallback {
+        width: 112px; height: 112px; display: grid; place-items: center; border-radius: 26px;
+        font-size: 32px; font-weight: 800; letter-spacing: 0.06em;
+        color: #edf4ff; background: linear-gradient(135deg, #367af4, #173f7f);
+      }
+      .login-brand-copy {
+        display: grid; gap: 8px;
+      }
+      .login-brand-copy h2 {
+        margin: 0; color: #edf4ff; font-size: clamp(2rem, 3vw, 3.2rem); letter-spacing: -.06em;
+      }
+      .login-brand-copy p {
+        margin: 0; color: #a9b8ca; font-size: 14px; letter-spacing: 0.12em; text-transform: uppercase;
+      }
+      .login-panel {
+        display: flex; align-items: center; justify-content: center; padding: 28px;
+        background: rgba(15, 24, 37, 0.82);
+      }
+      .login-card {
+        width: min(100%, 360px);
+      }
+      .login-card-header {
+        display: flex; align-items: center; gap: 12px; margin-bottom: 20px;
+      }
+      .login-card-logo {
+        width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center;
+        color: #f4f8ff; background: linear-gradient(135deg, #2d74f8, #173d7d);
+        font-weight: 800; font-size: 14px; box-shadow: 0 10px 24px rgba(45, 116, 248, 0.28);
+      }
+      .login-card-header h3 {
+        margin: 0; color: #f0f5fd; font-size: 20px; letter-spacing: -.04em;
+      }
+      .login-card-header span {
+        color: #9aa9be; font-size: 12px;
+      }
+      .login-form {
+        display: grid; gap: 14px; margin-top: 12px;
+      }
+      .login-field {
+        display: grid; gap: 8px;
+      }
+      .login-field label {
+        color: #b6c5d8; font-size: 12px; font-weight: 700; letter-spacing: 0.02em;
+      }
+      .login-field input {
+        width: 100%; padding: 12px 14px; background: rgba(8, 17, 27, 0.95); border: 1px solid #2a394e; border-radius: 12px; color: #edf5ff;
+      }
+      .login-field input:focus {
+        border-color: #6d9dff;
+        box-shadow: 0 0 0 3px rgba(90, 140, 255, 0.16);
+        outline: none;
+      }
+      .login-form button {
+        margin-top: 4px; height: 48px; border-radius: 12px; font-size: 15px; font-weight: 700;
+      }
+      .login-status {
+        min-height: 18px; margin-top: 4px; font-size: 12px;
+      }
       @media (max-width: 820px) {
-        .shell { padding: 20px 15px 38px; }
-        .form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-        .summary { gap: 9px; }
-        .summary-card { padding: 14px; }
-        .summary-value { font-size: 21px; }
-      }
-      @media (max-width: 560px) {
-        .shell { padding: 16px 11px 30px; }
-        .topbar { align-items: flex-start; }
-        .actor { text-align: right; max-width: 120px; }
-        .summary { grid-template-columns: 1fr; }
-        .summary-card { display: flex; justify-content: space-between; align-items: center; }
-        .summary-value { margin: 0; }
-        .tabs { width: 100%; }
-        .tab-button { flex: 1; padding: 10px 7px; font-size: 12px; }
-        .panel { padding: 15px; }
-        .form-grid { grid-template-columns: 1fr; }
-        .panel-heading { flex-direction: column; }
-      }
-      :root {
-        --ink: #e8eef8;
-        --muted: #92a0b4;
-        --line: #202a38;
-        --paper: #101722;
-        --canvas: #080c13;
-        --blue: #3483f5;
-        --blue-dark: #2168d3;
-        --green: #48c7a0;
-        --red: #ff7887;
-        --shadow: 0 12px 28px rgba(0, 0, 0, .16);
-      }
-      body { color: var(--ink); background: #080c13; }
-      .sidebar {
-        position: fixed; z-index: 5; inset: 0 auto 0 0; display: flex; flex-direction: column;
-        width: 258px; padding: 18px 14px 14px; background-color: #0a0f16;
-        background-image: linear-gradient(rgba(5, 12, 25, .55), rgba(5, 12, 25, .6)), url("./assets/sidebar-paisley.png");
-        background-size: auto, 100% auto; background-position: center, center top;
-        background-repeat: no-repeat, repeat-y; border-right: 1px solid #1d2735;
-      }
-      .sidebar-brand { display: flex; align-items: center; gap: 12px; min-height: 82px; padding: 0 6px 15px; border-bottom: 1px solid rgba(157, 184, 220, .22); background: linear-gradient(90deg, rgba(5, 10, 20, .42), rgba(5, 10, 20, .12)); }
-      .brand { gap: 13px; min-width: 0; }
-      .brand-mark { width: 72px; height: 72px; flex: 0 0 72px; border-radius: 14px; font-size: 18px; background: transparent; }
-      .brand-mark img { background: transparent; }
-      .brand-copy { min-width: 0; padding: 0; border: 0; background: transparent; box-shadow: none; }
-      h1 { color: #ffffff; font-family: "Barlow Condensed", "Arial Narrow", sans-serif; font-size: 23px; line-height: .98; letter-spacing: .2px; text-shadow: 0 1px 4px #000, 0 0 10px rgba(0, 0, 0, .75); }
-      .subtitle { color: #d5e2f4; font-size: 11px; text-shadow: 0 1px 4px #000, 0 0 8px rgba(0, 0, 0, .9); }
-      .tabs {
-        display: flex; flex-direction: column; align-items: stretch; gap: 4px; width: 100%;
-        margin: 20px 0 0; padding: 0; border: 0; border-radius: 0; background: transparent;
-      }
-      .tabs::before { content: "WORKSPACE"; margin: 0 10px 9px; color: #d4e2f5; font-size: 10px; letter-spacing: 1.6px; font-weight: 750; text-shadow: 0 1px 4px #000, 0 0 8px #000; }
-      .tab-button {
-        display: flex; align-items: center; gap: 11px; width: 100%; text-align: left; padding: 11px 12px;
-        border: 1px solid transparent; border-radius: 8px; color: #e0e9f7; background: rgba(5, 10, 20, .16);
-        font-size: 13px; font-weight: 700; text-shadow: 0 1px 3px #000, 0 0 7px rgba(0, 0, 0, .85);
-      }
-      .tab-icon { width: 17px; height: 17px; flex: 0 0 17px; color: #c0d3ee; }
-      .tab-button:hover { color: #ffffff; background: rgba(17, 26, 39, .92); }
-      .tab-button:hover .tab-icon { color: #a8caff; }
-      .tab-button.active { color: #8dbaff; background: #142846; border-color: #1b385e; box-shadow: none; }
-      .tab-button.active .tab-icon { color: #62a0ff; }
-      .sidebar-foot { margin-top: auto; padding: 14px 10px 3px; border-top: 1px solid rgba(157, 184, 220, .28); background: linear-gradient(90deg, rgba(5, 10, 20, .5), rgba(5, 10, 20, .18)); }
-      .sidebar-foot-label { color: #d2e4ff; font-family: "UnifrakturCook", serif; font-size: 20px; line-height: 1.15; letter-spacing: .2px; text-shadow: 0 1px 4px #000, 0 0 9px #000; }
-      .sidebar-foot-copy { margin-top: 5px; color: #d2e4ff; font-family: "UnifrakturCook", serif; font-size: 25px; line-height: 1.1; text-shadow: 0 1px 4px #000, 0 0 9px #000; }
-      .member-search { width: min(100%, 340px); }
-      .master-list-table td:nth-child(2) { min-width: 240px; }
-      .member-count-note { color: #92a0b4; font-size: 12px; }
-      .about-page { display: grid; gap: 16px; }
-      .about-hero {
-        position: relative; overflow: hidden; padding: clamp(24px, 4vw, 42px);
-        border: 1px solid #29466d; border-radius: 12px;
-        background: radial-gradient(ellipse at 88% 20%, rgba(42, 111, 210, .28), transparent 37%), linear-gradient(120deg, #101d2e, #111722 72%);
-      }
-      .about-hero::after { content: "KEV"; position: absolute; right: 26px; bottom: -30px; color: rgba(133, 178, 240, .07); font-size: clamp(90px, 18vw, 190px); font-weight: 850; letter-spacing: -.09em; line-height: 1; pointer-events: none; }
-      .about-kicker { color: #8dbaff; font-size: 10px; font-weight: 750; letter-spacing: 1.8px; }
-      .about-hero h3 { position: relative; z-index: 1; margin: 12px 0 0; color: #f2f7ff; font-size: clamp(24px, 3vw, 34px); letter-spacing: -.5px; }
-      .about-hero-copy { position: relative; z-index: 1; max-width: 760px; margin: 11px 0 0; color: #aebdd1; font-size: 14px; line-height: 1.75; }
-      .about-established { display: inline-flex; align-items: center; gap: 8px; margin-top: 20px; padding: 7px 11px; border: 1px solid #315581; border-radius: 999px; color: #bcd7ff; background: rgba(25, 57, 94, .55); font-size: 11px; font-weight: 700; letter-spacing: .5px; }
-      .about-established::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: #66a6ff; box-shadow: 0 0 10px rgba(102, 166, 255, .7); }
-      .about-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
-      .about-card { min-width: 0; padding: 21px; border: 1px solid #202a38; border-radius: 11px; background: #101722; }
-      .about-card-wide { grid-column: 1 / -1; }
-      .about-label { color: #7faeff; font-size: 10px; font-weight: 750; letter-spacing: 1.4px; }
-      .about-value { margin-top: 9px; color: #edf4ff; font-size: 18px; font-weight: 700; }
-      .about-copy { margin: 9px 0 0; color: #9aa9be; font-size: 13px; line-height: 1.7; }
-      .about-role-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; margin-top: 16px; }
-      .about-role { padding: 12px 13px; border: 1px solid #253349; border-radius: 8px; background: #0c131e; }
-      .about-role strong { display: block; color: #e6effc; font-size: 13px; }
-      .about-role span { display: block; margin-top: 4px; color: #8799b1; font-size: 11px; line-height: 1.5; }
-      .about-note { margin-top: 13px; padding-left: 11px; border-left: 2px solid #426ea6; color: #8597af; font-size: 11px; line-height: 1.6; }
-      .about-values { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 15px; }
-      .about-value-card { padding: 14px; border-radius: 8px; background: #0c131e; }
-      .about-value-card strong { color: #dceaff; font-size: 13px; }
-      .about-value-card p { margin: 7px 0 0; color: #98a8be; font-size: 12px; line-height: 1.65; }
-      @media (max-width: 560px) {
-        .about-grid, .about-role-list, .about-values { grid-template-columns: 1fr; }
-        .about-card-wide { grid-column: auto; }
-        .about-hero::after { right: 10px; bottom: -16px; }
-      }
-      .workspace { min-height: 100vh; margin-left: 258px; }
-      .topbar {
-        position: sticky; z-index: 4; top: 0; display: flex; align-items: center; justify-content: space-between;
-        min-height: 58px; margin: 0; padding: 0 clamp(20px, 3vw, 42px);
-        border-bottom: 1px solid #1d2735; background: rgba(8, 12, 19, .96); backdrop-filter: blur(12px);
-      }
-      .breadcrumb { display: flex; align-items: center; gap: 9px; color: #7e8ea5; font-size: 12px; }
-      .breadcrumb strong { color: #e3eaf5; font-weight: 650; }
-      .topbar-tag { color: #8dbaff; font-family: "UnifrakturCook", serif; font-size: 29px; line-height: 1; }
-      .summary[hidden] { display: none; }
-      .shell { max-width: none; margin: 0; padding: 28px clamp(20px, 3vw, 42px) 52px; }
-      .page-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; margin-bottom: 22px; }
-      .page-eyebrow { margin-bottom: 5px; color: #73a9ff; font-size: 10px; font-weight: 750; letter-spacing: 1.5px; }
-      .page-title { color: #f0f5fd; font-size: 25px; letter-spacing: -.4px; }
-      .page-description { margin-top: 6px; color: #93a2b8; font-size: 13px; line-height: 1.5; }
-      .loading { color: #9aaac0; }
-      .summary { gap: 14px; }
-      .summary-card, .panel { background: #101722; border-color: #202a38; border-radius: 11px; }
-      .summary-card { padding: 18px 20px; }
-      .summary-label, .hint { color: #92a0b4; }
-      .summary-value { color: #edf4ff; }
-      .panel { padding: 21px; }
-      .panel-heading h2 { color: #edf4ff; }
-      th { color: #93a3bb; background: #141e2c; }
-      td { color: #d9e3f1; }
-      th, td { border-bottom-color: #202b3b; }
-      .table-wrap { border-color: #202b3b; background: #101722; }
-      input, select, textarea, .monitor-select, .field input, .field select, .field textarea, .cell-input {
-        color: #e4ecf8; background-color: #0b111a; border-color: #2a394e;
-      }
-      select.monitor-select,
-      select.monitor-select:enabled,
-      select.monitor-select:disabled {
-        color: #e4ecf8 !important;
-        -webkit-text-fill-color: #e4ecf8;
-        background-color: #0b111a !important;
-        opacity: 1 !important;
-        color-scheme: dark;
-      }
-      select.monitor-select option { color: #e4ecf8; background-color: #0b111a; }
-      input::placeholder, textarea::placeholder { color: #71819a; }
-      .field label { color: #a9b7ca; }
-      .btn, .transaction-mode { color: #d6e1f0; background: #111c2b; border-color: #2a394e; }
-      .btn:hover, .transaction-mode:hover { background: #18263a; }
-      .btn.primary { color: white; background: #2878f0; border-color: #2878f0; }
-      .btn.primary:hover { background: #1b5fc9; }
-      .transaction-mode.active { color: #8fbcff; background: #142c4b; border-color: #2d5b94; }
-      .monitor-table td:first-child, .monitor-table th:first-child { background: #101722; }
-      .monitor-table th:first-child { background: #141e2c; }
-      .monitor-table tfoot th, .monitor-table tfoot td { background: #172438; border-top-color: #30425b; }
-      .monitor-table .deduction-row td { color: #ff8792; background: #241720; }
-      .field-chip { color: #c6d4e8; background: #101a28; border-color: #2a394e; }
-      .badge.add { color: #5de0bd; background: #10382f; }
-      .badge.deduct { color: #ff8792; background: #3b2028; }
-      .tab-button:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid #59a0ff; outline-offset: 2px; }
-      @media (max-width: 820px) {
-        .sidebar { width: 220px; }
-        .workspace { margin-left: 220px; }
-        .shell { padding-inline: 18px; }
-        .topbar { padding-inline: 18px; }
-      }
-      @media (max-width: 560px) {
-        .sidebar { position: sticky; top: 0; width: 100%; height: auto; padding: 8px 10px; border-right: 0; border-bottom: 1px solid #1d2735; }
-        .sidebar-brand { min-height: 58px; padding: 0 3px 8px; }
-        .brand-mark { width: 48px; height: 48px; flex-basis: 48px; border-radius: 11px; }
-        h1 { font-size: 20px; }
-        .tabs { flex-direction: row; gap: 4px; margin-top: 8px; overflow-x: auto; }
-        .tabs::before { display: none; }
-        .sidebar-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; padding: 7px 4px 0; }
-        .sidebar-foot-copy { margin: 0; font-size: 22px; }
-        .tab-button { flex: 1 0 auto; justify-content: center; width: auto; padding: 8px 9px; font-size: 11px; }
-        .tab-icon { width: 15px; height: 15px; flex-basis: 15px; }
-        .workspace { margin-left: 0; }
-        .topbar { position: static; min-height: 48px; padding-inline: 13px; }
-        .shell { padding: 17px 11px 30px; }
-        .summary { grid-template-columns: 1fr; }
-        .summary-card { display: flex; justify-content: space-between; align-items: center; padding: 14px; }
-        .summary-value { margin-top: 0; font-size: 20px; }
-        .panel { padding: 15px; }
-        .panel-heading { flex-direction: column; }
-        .page-heading { margin-bottom: 16px; }
-        .page-title { font-size: 21px; }
-        .about-grid { grid-template-columns: 1fr; }
+        .login-layout { grid-template-columns: 1fr; min-height: auto; }
+        .login-visual { min-height: 260px; }
+        .login-panel { padding-top: 18px; }
       }
     </style>
   </head>
@@ -562,26 +479,42 @@
     </div>
 
     <div id="login-page" class="login-page">
-      <div class="login-card">
-        <div class="login-brand">
-          <div class="login-mark">KEV</div>
-          <div>
-            <h1 class="login-title">Kalye East Varrio</h1>
-            <div class="login-subtitle">Funds tracker access</div>
+      <div class="login-layout">
+        <div class="login-visual">
+          <div class="login-visual-inner">
+            <div class="login-logo-wrap">
+              <img id="login-logo" alt="Kalye East Varrio logo" style="display:none;">
+              <div id="login-logo-fallback" class="login-fallback">KEV</div>
+            </div>
+            <div class="login-brand-copy">
+              <h2>Kalye East Varrio</h2>
+              <p>Respect • Discipline • Loyalty</p>
+            </div>
           </div>
         </div>
-        <form id="login-form" class="login-form">
-          <div class="field">
-            <label for="login-username">Username</label>
-            <input id="login-username" type="text" autocomplete="username" placeholder="Enter username" required>
+        <div class="login-panel">
+          <div class="login-card">
+            <div class="login-card-header">
+              <div class="login-card-logo">KEV</div>
+              <div>
+                <h3>Welcome back</h3>
+                <span>Secure access</span>
+              </div>
+            </div>
+            <form id="login-form" class="login-form">
+              <div class="login-field">
+                <label for="login-username">Username</label>
+                <input id="login-username" type="text" autocomplete="username" placeholder="Enter username" required>
+              </div>
+              <div class="login-field">
+                <label for="login-password">Password</label>
+                <input id="login-password" type="password" autocomplete="current-password" placeholder="Enter password" required>
+              </div>
+              <button class="btn primary" type="submit">Login</button>
+              <div id="login-status" class="login-status" role="status" aria-live="polite"></div>
+            </form>
           </div>
-          <div class="field">
-            <label for="login-password">Password</label>
-            <input id="login-password" type="password" autocomplete="current-password" placeholder="Enter password" required>
-          </div>
-          <button class="btn primary" type="submit">Login</button>
-          <div id="login-status" class="login-status" role="status" aria-live="polite"></div>
-        </form>
+        </div>
       </div>
     </div>
 
@@ -623,6 +556,48 @@
           loginStatus.textContent = message;
           loginStatus.classList.toggle('error', Boolean(isError));
           loginStatus.classList.toggle('success', !isError && Boolean(message));
+        }
+
+        function applyBranding(branding) {
+          const logoImage = document.getElementById('brand-logo');
+          const loginLogo = document.getElementById('login-logo');
+          const fallback = document.getElementById('login-logo-fallback');
+          const brandFallback = document.getElementById('brand-fallback');
+
+          const imageUrl = branding && branding.logo ? branding.logo : '';
+          if (imageUrl) {
+            if (logoImage) {
+              logoImage.src = imageUrl;
+              logoImage.style.display = 'block';
+            }
+            if (loginLogo) {
+              loginLogo.src = imageUrl;
+              loginLogo.style.display = 'block';
+            }
+            if (fallback) fallback.style.display = 'none';
+            if (brandFallback) brandFallback.hidden = true;
+          } else {
+            if (fallback) fallback.style.display = 'grid';
+            if (brandFallback) brandFallback.hidden = false;
+          }
+
+          const status = document.getElementById('branding-status');
+          if (status && branding && branding.error) {
+            setStatus(status, branding.error, true);
+          } else if (status) {
+            setStatus(status, '');
+          }
+        }
+
+        function initBranding() {
+          apiCall('getBranding')
+            .then(branding => {
+              applyBranding(branding);
+            })
+            .catch(error => {
+              const status = document.getElementById('branding-status');
+              if (status) setStatus(status, error && error.message ? error.message : 'Could not load the logo from Images!B2.', true);
+            });
         }
 
         function callServer(method, args, onSuccess, statusElement) {
@@ -673,22 +648,11 @@
         function loadBranding() {
           apiCall('getBranding')
             .then(branding => {
-              const status = document.getElementById('branding-status');
-              const logo = document.getElementById('brand-logo');
-              if (branding.logo) {
-                logo.onload = () => {
-                  logo.style.display = 'block';
-                  document.getElementById('brand-fallback').hidden = true;
-                };
-                logo.onerror = () => setStatus(status, 'The logo in Images!B2 could not be displayed.', true);
-                logo.src = branding.logo;
-              }
-              if (branding.error) setStatus(status, branding.error, true);
-              else setStatus(status, '');
+              applyBranding(branding);
             })
             .catch(error => {
-              setStatus(document.getElementById('branding-status'),
-                error && error.message ? error.message : 'Could not load the logo from Images!B2.', true);
+              const status = document.getElementById('branding-status');
+              if (status) setStatus(status, error && error.message ? error.message : 'Could not load the logo from Images!B2.', true);
             });
         }
 
