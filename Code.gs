@@ -72,17 +72,23 @@ function doPost(event) {
 
 function login(username, password) {
   ensureTables_();
-  const cleanUser = String(username || '').trim();
-  const cleanPass = String(password || '').trim();
+  const normalize = value => String(value == null ? '' : value)
+    .replace(/\r?\n/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  const cleanUser = normalize(username).toLowerCase();
+  const cleanPass = normalize(password);
+
   if (!cleanUser || !cleanPass) {
     throw new Error('Enter both username and password.');
   }
 
-  const accounts = getRows_('accounts');
+  const accounts = getRows_('accounts').filter(row => normalize(row.username) || normalize(row.password));
   const matched = accounts.find(row => {
-    const sheetUser = String(row.username || '').trim().toLowerCase();
-    const sheetPass = String(row.password || '').trim();
-    return sheetUser === cleanUser.toLowerCase() && sheetPass === cleanPass;
+    const sheetUser = normalize(row.username).toLowerCase();
+    const sheetPass = normalize(row.password);
+    return sheetUser === cleanUser && sheetPass === cleanPass;
   });
 
   if (!matched) {
@@ -91,7 +97,7 @@ function login(username, password) {
 
   return {
     ok: true,
-    username: cleanUser,
+    username: normalize(username),
     message: 'Login successful.'
   };
 }
