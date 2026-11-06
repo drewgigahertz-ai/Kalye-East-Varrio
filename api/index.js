@@ -7,8 +7,10 @@ const allowedMethods = new Set([
   'archiveFormField',
   'saveTransaction',
   'voidTransaction',
+  'addMasterMember',
   'createMonitoring',
   'addMonitoringDate',
+  'removeMonitoringDate',
   'addMonitoringMember',
   'archiveMonitoring'
 ]);

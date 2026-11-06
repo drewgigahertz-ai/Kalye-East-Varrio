@@ -28,6 +28,10 @@ const TABLES = {
     name: 'FT Member Profiles',
     headers: ['name', 'plakaso', 'updatedAt']
   },
+  masterMembers: {
+    name: 'FT Master Members',
+    headers: ['name', 'plakaso', 'createdAt', 'status']
+  },
   values: {
     name: 'FT Monitor Values',
     headers: ['id', 'monitorId', 'memberId', 'date', 'value', 'updatedAt']
@@ -58,8 +62,10 @@ function doPost(event) {
       archiveFormField: archiveFormField,
       saveTransaction: saveTransaction,
       voidTransaction: voidTransaction,
+      addMasterMember: addMasterMember,
       createMonitoring: createMonitoring,
       addMonitoringDate: addMonitoringDate,
+      removeMonitoringDate: removeMonitoringDate,
       addMonitoringMember: addMonitoringMember,
       archiveMonitoring: archiveMonitoring
     });
@@ -299,6 +305,28 @@ function getAppData() {
         total: roundMoney_(Array.from(dates).reduce((sum, date) => sum + totals[date], 0))
       };
     });
+  const memberDirectoryByName = new Map();
+  getRows_('masterMembers').filter(member => member.status !== 'ARCHIVED').forEach(member => {
+    const name = cleanText_(member.name, 120);
+    if (!name) return;
+    const key = name.toLowerCase();
+    memberDirectoryByName.set(key, {
+      name: name,
+      plakaso: String(member.plakaso || plakasoByMemberName.get(key) || '')
+    });
+  });
+  monitors.forEach(monitor => monitor.members.forEach(member => {
+    const key = member.name.trim().toLowerCase();
+    if (!key) return;
+    const existing = memberDirectoryByName.get(key);
+    if (!existing) {
+      memberDirectoryByName.set(key, { name: member.name, plakaso: member.plakaso || '' });
+    } else {
+      existing.plakaso = plakasoByMemberName.get(key) || existing.plakaso || member.plakaso || '';
+    }
+  }));
+  const memberDirectory = Array.from(memberDirectoryByName.values())
+    .sort((left, right) => left.name.localeCompare(right.name));
 
   const audit = getRows_('audit').reverse().map(row => ({
     timestamp: dateTimeToClient_(row.timestamp),
@@ -313,6 +341,7 @@ function getAppData() {
     fields: fields,
     transactions: transactions.reverse(),
     monitors: monitors,
+    memberDirectory: memberDirectory,
     audit: audit,
     availableFunds: availableFunds,
     actor: getActor_()
@@ -509,6 +538,37 @@ function addMonitoringDate(monitorId, dateValue) {
   return getAppData();
 }
 
+function removeMonitoringDate(monitorId, dateValue) {
+  return withTrackerLock_(() => {
+    ensureTables_();
+    const date = validDate_(dateValue);
+    if (!date) throw new Error('Choose a valid date column.');
+    const id = String(monitorId || '');
+    const monitor = findRow_('monitors', 'id', id);
+    if (!monitor || monitor.values[4] === 'ARCHIVED') {
+      throw new Error('That monitoring form no longer exists.');
+    }
+
+    const dates = parseJson_(monitor.values[2], []);
+    if (dates.indexOf(date) === -1) throw new Error('That date column no longer exists.');
+    const activeMonitors = getRows_('monitors').filter(row => row.status !== 'ARCHIVED');
+    const isDefaultMonitor = activeMonitors.length && String(activeMonitors[0].id) === id;
+    const hasTransactions = getRows_('transactions').some(transaction =>
+      transaction.status !== 'VOID' &&
+      validDate_(transaction.date) === date &&
+      (String(transaction.monitorId || '') === id || (!transaction.monitorId && isDefaultMonitor)));
+    if (hasTransactions) {
+      throw new Error('This date has recorded transactions. Void those transactions before removing the column.');
+    }
+
+    monitor.values[2] = JSON.stringify(dates.filter(value => value !== date));
+    getSheet_('monitors').getRange(monitor.rowNumber, 1, 1, TABLES.monitors.headers.length)
+      .setValues([monitor.values]);
+    audit_('Removed monitoring date column', 'Monitoring', id, date);
+    return getAppData();
+  });
+}
+
 function addMonitoringMember(monitorId, memberName) {
   ensureTables_();
   const monitor = findRow_('monitors', 'id', String(monitorId || ''));
@@ -561,6 +621,24 @@ function archiveMonitoring(monitorId) {
   getSheet_('monitors').getRange(found.rowNumber, 1, 1, TABLES.monitors.headers.length).setValues([found.values]);
   audit_('Archived monitoring', 'Monitoring', String(monitorId), String(found.values[1]));
   return getAppData();
+}
+
+function addMasterMember(memberName, memberPlakaso) {
+  return withTrackerLock_(() => {
+    ensureTables_();
+    const name = cleanText_(memberName, 120);
+    const plakaso = cleanText_(memberPlakaso, 120);
+    if (!name) throw new Error('Enter a member name.');
+    const key = name.toLowerCase();
+    const alreadyInMasterList = getRows_('masterMembers').some(member =>
+      member.status !== 'ARCHIVED' && String(member.name).trim().toLowerCase() === key);
+    if (alreadyInMasterList) {
+      throw new Error('That member is already in the master list.');
+    }
+    getSheet_('masterMembers').appendRow([name, plakaso, new Date(), 'ACTIVE']);
+    audit_('Added master list member', 'Master list member', name, plakaso ? name + ' · ' + plakaso : name);
+    return getAppData();
+  });
 }
 
 function ensureTables_() {

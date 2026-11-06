@@ -38,9 +38,9 @@ The Vercel API keeps the signed six-hour session in an HTTP-only cookie and the 
 ## Features
 
 - **Funds & forms:** Record additions by member and monitoring, or general deductions against the selected monitoring. Edit or void transactions; configure optional and required transaction fields.
-- **Monitoring:** Create multiple monitoring forms, add members and date columns, view read-only contribution values, visible general-deduction rows, and net totals. Copy the table for spreadsheet use.
+- **Monitoring:** Create multiple monitoring forms, add members and date columns, view read-only contribution values, visible general-deduction rows, and net totals. Dates display as `Nov. 7, 2026`; empty date columns can be removed, while columns with non-void transactions are protected. Copy the table or download it as a PNG.
 - **Audit logs:** Review activity recorded through the tracker.
-- **Master list:** Search active members and view only their names and plakaso, without financial summaries. Members are active when they appear in an active monitoring form. Edit plakaso values directly in the automatically created `FT Member Profiles` sheet.
+- **Master list:** Add members with their plakaso, search the directory, and use its names in the fund form member dropdown. Members already in active monitoring forms also appear. New entries are stored in the automatically created `FT Master Members` sheet; existing monitoring members' plakaso values can be maintained in `FT Member Profiles`.
 - **About:** Gives a general introduction to the community and its shared values without publishing personal leadership details or territorial claims.
 - Existing addition transactions without a monitoring ID are displayed under the first active monitoring for compatibility.
 
