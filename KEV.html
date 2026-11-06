@@ -120,6 +120,7 @@
       .status.error { color: var(--red); }
       .status.success { color: var(--green); }
       .loading { color: var(--muted); padding: 40px; text-align: center; }
+      .topbar-actions { display: flex; align-items: center; gap: 10px; }
       .login-page {
         min-height: 100vh; display: grid; place-items: center; padding: 24px; background:
           radial-gradient(circle at top, rgba(67, 117, 234, 0.28), transparent 32%),
@@ -136,6 +137,7 @@
         width: 54px; height: 54px; display: grid; place-items: center; border-radius: 14px;
         font-weight: 800; color: #fff; background: linear-gradient(135deg, #2d74f8, #183d7a); box-shadow: 0 12px 30px rgba(44, 92, 196, 0.38);
       }
+      .login-mark img { width: 100%; height: 100%; object-fit: contain; display: none; }
       .login-title { margin: 0; font-size: 25px; letter-spacing: -.4px; color: #f2f7ff; }
       .login-subtitle { color: #9aa9be; margin-top: 4px; font-size: 12px; }
       .login-form { display: grid; gap: 12px; margin-top: 20px; }
@@ -251,6 +253,28 @@
     </style>
   </head>
   <body>
+    <div id="login-page" class="login-page">
+      <main class="login-card">
+        <div class="login-brand">
+          <div class="login-mark"><span id="login-logo-fallback">KEV</span><img id="login-logo" alt=""></div>
+          <div>
+            <h1 class="login-title">Kalye East Varrio</h1>
+            <div class="login-subtitle">Community tracker</div>
+          </div>
+        </div>
+        <form id="login-form" class="login-form">
+          <label class="login-field" for="login-username">Username
+            <input id="login-username" name="username" type="text" maxlength="120" autocomplete="username" required>
+          </label>
+          <label class="login-field" for="login-password">Password
+            <input id="login-password" name="password" type="password" maxlength="256" autocomplete="current-password" required>
+          </label>
+          <button type="submit" class="btn primary">Sign in</button>
+          <div id="login-status" class="login-status" role="status" aria-live="polite"></div>
+        </form>
+      </main>
+    </div>
+    <div id="app-shell" class="hidden">
     <div class="page-layout">
       <aside class="sidebar">
         <div class="sidebar-brand">
@@ -292,7 +316,11 @@
       <div class="workspace">
         <header class="topbar">
           <div class="breadcrumb"><span>Kalye East Varrio</span><span>/</span><strong id="page-breadcrumb">Funds &amp; forms</strong></div>
-          <span class="topbar-tag" aria-label="1102">1102</span>
+          <div class="topbar-actions">
+            <span id="active-user"></span>
+            <button type="button" class="btn small" id="logout-button">Sign out</button>
+            <span class="topbar-tag" aria-label="1102">1102</span>
+          </div>
         </header>
       <main class="shell">
       <div id="loading" class="loading">Connecting to your spreadsheet…</div>
@@ -478,8 +506,7 @@
       </div>
     </div>
 
-    <div id="app-shell" class="hidden">
-      <script>
+    <script>
         let appData = { fields: [], transactions: [], monitors: [], audit: [], actor: '' };
         let loggedInUser = '';
         const currency = new Intl.NumberFormat(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -491,12 +518,13 @@
         const loginStatus = document.getElementById('login-status');
 
         loginForm.addEventListener('submit', handleLogin);
+        document.getElementById('logout-button').addEventListener('click', handleLogout);
         loadBranding();
 
         function handleLogin(event) {
           event.preventDefault();
           const username = document.getElementById('login-username').value.trim();
-          const password = document.getElementById('login-password').value.trim();
+          const password = document.getElementById('login-password').value;
           setLoginStatus('Checking credentials…', false);
 
           apiCall('login', [username, password])
@@ -505,6 +533,7 @@
               loginPage.classList.add('hidden');
               appShell.classList.remove('hidden');
               app.hidden = false;
+              document.getElementById('login-password').value = '';
               setLoginStatus('', false);
               loadData();
             })
@@ -517,6 +546,25 @@
           loginStatus.textContent = message;
           loginStatus.classList.toggle('error', Boolean(isError));
           loginStatus.classList.toggle('success', !isError && Boolean(message));
+        }
+
+        function handleLogout() {
+          apiCall('logout', [])
+            .then(() => finishLogout('You have signed out.'))
+            .catch(error => {
+              const expired = /session has expired|sign in again/i.test(error && error.message || '');
+              finishLogout(expired
+                ? 'Your session has expired.'
+                : 'Signed out here. The server session could not be revoked and will expire automatically.');
+            });
+        }
+
+        function finishLogout(message) {
+          loggedInUser = '';
+          appShell.classList.add('hidden');
+          loginPage.classList.remove('hidden');
+          document.getElementById('login-password').value = '';
+          setLoginStatus(message, false);
         }
 
         function applyBranding(branding) {
@@ -569,6 +617,10 @@
               if (onSuccess) onSuccess(result);
             })
             .catch(error => {
+              if (/session has expired|sign in again/i.test(error && error.message || '')) {
+                finishLogout('Your session has expired. Please sign in again.');
+                return;
+              }
               if (statusElement) setStatus(statusElement, error.message || 'The request failed.', true);
               else window.alert(error.message || 'The request failed.');
             });
@@ -594,12 +646,18 @@
           apiCall('getAppData')
             .then(data => {
               appData = data;
+              loggedInUser = data.actor || loggedInUser;
+              document.getElementById('active-user').textContent = loggedInUser;
               document.getElementById('loading').hidden = true;
               document.getElementById('app').hidden = false;
               renderApp();
               loadBranding();
             })
             .catch(error => {
+              if (/session has expired|sign in again/i.test(error && error.message || '')) {
+                finishLogout('Your session expired. Please sign in again.');
+                return;
+              }
               const loading = document.getElementById('loading');
               loading.textContent = error && error.message ? error.message : 'Could not load the tracker. Check spreadsheet access and Apps Script deployment settings.';
               loading.style.color = '#bf3e48';
@@ -1134,7 +1192,6 @@
           const date = new Date(value);
           return isNaN(date.getTime()) ? value : date.toLocaleString();
         }
-      </script>
-    </div>
+    </script>
   </body>
 </html>

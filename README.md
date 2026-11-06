@@ -8,7 +8,7 @@ The web interface is hosted on Vercel. Google Apps Script remains the server-sid
 2. In Apps Script, choose **Deploy → New deployment → Web app**. Set **Execute as** to your account and **Who has access** to **Anyone**, then deploy. This is required for the Vercel server to call the backend. Copy the web app URL ending in `/exec`.
 3. Push this folder to a GitHub repository and import it as a project in Vercel. No build command or framework preset is required; Vercel serves `KEV.html` and deploys `api/index.js` as a serverless API route.
 4. In Vercel project **Settings → Environment Variables**, add `APPS_SCRIPT_API_URL` with the Apps Script `/exec` URL. Apply it to the environments you will deploy, then redeploy.
-5. Open the Vercel deployment URL and test with non-sensitive sample entries before using live fund data.
+5. Add usernames and passwords to the `ACCOUNTS` sheet (columns A and B), keeping that sheet restricted to trusted administrators. Open the Vercel deployment URL and sign in with one of those accounts. Test with non-sensitive sample entries before using live fund data.
 
 The blue-and-black dashboard with a larger sidebar logo, condensed display title, paisley-patterned sidebar, and dark background is served from `KEV.html`. The sidebar pattern is the supplied `assets/sidebar-paisley.png` image, scaled proportionally and repeated vertically. The browser tab title is **Kalye East Varrio**. The browser favicon is served by `api/favicon.js` from the logo in `Images!B2`; a KEV monogram is used if no logo is configured.
 
@@ -29,9 +29,11 @@ The blue-and-black dashboard with a larger sidebar logo, condensed display title
 
 To test only that the server starts without connecting to Google, run `npx.cmd vercel dev` without setting `APPS_SCRIPT_API_URL`; the page should load, but data requests will show a configuration error. To test real tracker behavior, use a test spreadsheet rather than live funds.
 
-## Public access warning
+## Sign-in and access
 
-This deployment intentionally has no sign-in. Anyone with the Vercel URL can view records and use the tracker to add, edit, void, or configure data. The Apps Script endpoint is also deployed with public access, and the tracker records edits as **Public user** rather than identifying who made them. Do not use this configuration for confidential or high-risk financial data. To restrict access later, add authentication and authorization before exposing either the Vercel API or Apps Script backend.
+The tracker requires a username and password from the `ACCOUNTS` sheet, using columns A and B. Keep the spreadsheet and `ACCOUNTS` sheet limited to trusted administrators: passwords are currently stored there as plain text. The login endpoint applies a temporary lockout after repeated failed attempts for a username.
+
+The Vercel API keeps the signed six-hour session in an HTTP-only cookie and the Apps Script backend checks it for every private operation. The Apps Script web app still needs **Anyone** access so Vercel can reach it, but direct requests to private tracker operations are rejected without a valid session. `getBranding` remains public so the browser tab icon can load the configured logo. Update and redeploy both the Apps Script project and the Vercel app when deploying authentication changes.
 
 ## Features
 

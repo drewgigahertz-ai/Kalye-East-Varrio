@@ -1,4 +1,7 @@
 const SPREADSHEET_ID = '1bK_remWm6O5Jj4p37stkf4vCi3jV0p4zyh5U2wiM-QU';
+const SESSION_TTL_SECONDS = 21600;
+let activeRequestActor = '';
+let activeRequestToken = '';
 
 const TABLES = {
   accounts: {
@@ -48,6 +51,7 @@ function doPost(event) {
     const request = JSON.parse(event && event.postData ? event.postData.contents : '{}');
     const methods = Object.assign(Object.create(null), {
       login: login,
+      logout: logout,
       getAppData: getAppData,
       getBranding: getBranding,
       saveFormField: saveFormField,
@@ -61,9 +65,19 @@ function doPost(event) {
     });
     const method = methods[request.method];
     if (!method) throw new Error('Unsupported tracker operation.');
+    const isPublicMethod = request.method === 'login' || request.method === 'getBranding';
+    activeRequestToken = isPublicMethod ? '' : String(request.authToken || '');
+    activeRequestActor = isPublicMethod ? '' : authenticateSession_(request.authToken);
     const args = Array.isArray(request.args) ? request.args : [];
-    return output.setContent(JSON.stringify({ result: method.apply(null, args) }));
+    try {
+      return output.setContent(JSON.stringify({ result: method.apply(null, args) }));
+    } finally {
+      activeRequestActor = '';
+      activeRequestToken = '';
+    }
   } catch (error) {
+    activeRequestActor = '';
+    activeRequestToken = '';
     return output.setContent(JSON.stringify({
       error: error && error.message ? error.message : 'The tracker request failed.'
     }));
@@ -71,18 +85,124 @@ function doPost(event) {
 }
 
 function login(username, password) {
-  ensureTables_();
-  const cleanUsername = cleanText_(username, 120);
-  const cleanPassword = cleanText_(password, 120);
-  if (!cleanUsername || !cleanPassword) throw new Error('Enter your username and password.');
+  const normalizedUsername = String(username == null ? '' : username).trim();
+  const suppliedPassword = String(password == null ? '' : password);
+  if (!normalizedUsername || !suppliedPassword || normalizedUsername.length > 120 || suppliedPassword.length > 256) {
+    throw new Error('Enter your username and password.');
+  }
 
-  const account = getRows_('accounts').find(row =>
-    String(row.username).trim().toLowerCase() === cleanUsername.toLowerCase() &&
-    String(row.password).trim() === cleanPassword
+  const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName('ACCOUNTS');
+  if (!sheet) throw new Error('The ACCOUNTS sheet was not found.');
+  const cache = CacheService.getScriptCache();
+  const failureKeys = loginFailureKeys_(normalizedUsername);
+  if (cache.get(failureKeys.locked)) throw new Error('Invalid username or password.');
+  const lastRow = sheet.getLastRow();
+  if (!lastRow) throw new Error('Invalid username or password.');
+  const accountRows = sheet.getRange(1, 1, lastRow, 2).getDisplayValues();
+  const firstRow = accountRows[0].map(value => String(value).trim().toLowerCase());
+  const firstAccountRow = firstRow[0] === 'username' && firstRow[1] === 'password' ? 1 : 0;
+  const validAccount = accountRows.slice(firstAccountRow).some(row =>
+    String(row[0]).trim() === normalizedUsername && String(row[1]) === suppliedPassword
   );
+  if (!validAccount) {
+    const attempts = Number(cache.get(failureKeys.count) || 0) + 1;
+    if (attempts >= 8) {
+      cache.remove(failureKeys.count);
+      cache.put(failureKeys.locked, '1', 600);
+    } else {
+      cache.put(failureKeys.count, String(attempts), 600);
+    }
+    throw new Error('Invalid username or password.');
+  }
 
-  if (!account) throw new Error('Invalid username or password.');
-  return { ok: true, username: cleanUsername };
+  cache.remove(failureKeys.count);
+  cache.remove(failureKeys.locked);
+  const token = createSessionToken_(normalizedUsername);
+  return { token: token, user: normalizedUsername };
+}
+
+function logout() {
+  if (activeRequestToken) CacheService.getScriptCache().remove(sessionCacheKey_(activeRequestToken));
+  return { ok: true };
+}
+
+function createSessionToken_(username) {
+  const expiresAt = Math.floor(Date.now() / 1000) + SESSION_TTL_SECONDS;
+  const payload = Utilities.base64EncodeWebSafe(JSON.stringify({
+    sub: username,
+    exp: expiresAt,
+    nonce: Utilities.getUuid()
+  })).replace(/=+$/, '');
+  const signature = signSessionPayload_(payload);
+  const token = payload + '.' + signature;
+  CacheService.getScriptCache().put(sessionCacheKey_(token), username, SESSION_TTL_SECONDS);
+  return token;
+}
+
+function authenticateSession_(token) {
+  const value = String(token || '');
+  const parts = value.split('.');
+  if (parts.length !== 2 || !parts[0] || !parts[1]) throw new Error('Your session has expired. Sign in again.');
+  if (!constantTimeEquals_(signSessionPayload_(parts[0]), parts[1])) {
+    throw new Error('Your session has expired. Sign in again.');
+  }
+
+  let payload;
+  try {
+    payload = JSON.parse(Utilities.newBlob(Utilities.base64DecodeWebSafe(parts[0])).getDataAsString());
+  } catch (error) {
+    throw new Error('Your session has expired. Sign in again.');
+  }
+  if (!payload || typeof payload.sub !== 'string' || !Number.isFinite(payload.exp) ||
+      payload.exp <= Math.floor(Date.now() / 1000) ||
+      CacheService.getScriptCache().get(sessionCacheKey_(value)) !== payload.sub) {
+    throw new Error('Your session has expired. Sign in again.');
+  }
+  return payload.sub;
+}
+
+function signSessionPayload_(payload) {
+  const properties = PropertiesService.getScriptProperties();
+  let secret = properties.getProperty('TRACKER_SESSION_SECRET');
+  if (!secret) {
+    const lock = LockService.getScriptLock();
+    lock.waitLock(30000);
+    try {
+      secret = properties.getProperty('TRACKER_SESSION_SECRET');
+      if (!secret) {
+        secret = Utilities.getUuid() + Utilities.getUuid() + Utilities.getUuid();
+        properties.setProperty('TRACKER_SESSION_SECRET', secret);
+      }
+    } finally {
+      lock.releaseLock();
+    }
+  }
+  return Utilities.base64EncodeWebSafe(
+    Utilities.computeHmacSha256Signature(payload, secret)
+  ).replace(/=+$/, '');
+}
+
+function sessionCacheKey_(token) {
+  const digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, String(token || ''));
+  return 'tracker-session-' + Utilities.base64EncodeWebSafe(digest).replace(/=+$/, '');
+}
+
+function loginFailureKeys_(username) {
+  const digest = Utilities.computeDigest(
+    Utilities.DigestAlgorithm.SHA_256,
+    String(username || '').toLowerCase()
+  );
+  const key = 'tracker-login-' + Utilities.base64EncodeWebSafe(digest).replace(/=+$/, '');
+  return { count: key + '-failures', locked: key + '-locked' };
+}
+
+function constantTimeEquals_(left, right) {
+  if (left.length !== right.length) return false;
+  let difference = 0;
+  for (let index = 0; index < left.length; index++) {
+    difference |= left.charCodeAt(index) ^ right.charCodeAt(index);
+  }
+  return difference === 0;
 }
 
 function getAppData() {
@@ -195,7 +315,7 @@ function getAppData() {
     monitors: monitors,
     audit: audit,
     availableFunds: availableFunds,
-    actor: 'Public user'
+    actor: getActor_()
   };
 }
 
@@ -535,7 +655,7 @@ function withTrackerLock_(operation) {
 }
 
 function getActor_() {
-  return 'Public user';
+  return activeRequestActor || 'Public user';
 }
 
 function getBranding_() {
