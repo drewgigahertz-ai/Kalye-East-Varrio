@@ -122,9 +122,10 @@
       .loading { color: var(--muted); padding: 40px; text-align: center; }
       .topbar-actions { display: flex; align-items: center; gap: 10px; }
       .login-page {
-        min-height: 100vh; display: grid; place-items: center; padding: 24px; background:
-          radial-gradient(circle at top, rgba(67, 117, 234, 0.28), transparent 32%),
-          linear-gradient(135deg, #08121d 0%, #101c30 55%, #0f1728 100%);
+        min-height: 100vh; display: grid; place-items: center; padding: 24px; background-color: #08121d;
+        background-image: linear-gradient(rgba(5, 12, 25, .58), rgba(5, 12, 25, .68)), url("./assets/sidebar-paisley.png");
+        background-size: cover, 100% auto; background-position: center, center top;
+        background-repeat: no-repeat, repeat-y;
       }
       .login-card {
         width: min(100%, 420px); padding: 30px 26px; border: 1px solid rgba(165, 188, 216, 0.22);
