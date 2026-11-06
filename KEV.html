@@ -322,7 +322,9 @@
       .monitor-table thead th { position: sticky; top: 0; z-index: 2; color: #d7e5f8; background: #1a2a40; white-space: normal; }
       .monitor-table thead th:first-child { left: 0; z-index: 3; min-width: 230px; text-align: left; background: #1a2a40; }
       .monitor-table tbody td:first-child, .monitor-table tfoot th:first-child { min-width: 230px; text-align: left; }
-      .monitor-date-heading { display: grid; justify-items: center; gap: 5px; }
+      .monitor-table thead th:not(:first-child):not(:last-child) { text-align: center; }
+      .monitor-table th:not(:last-child), .monitor-table td:not(:last-child) { border-right: 1px solid #263549; }
+      .monitor-date-heading { display: grid; justify-items: center; gap: 5px; width: 100%; }
       .monitor-date-remove { padding: 2px 7px; border: 1px solid #53627a; border-radius: 6px; color: #d7e5f8; background: #24354d; font-size: 11px; line-height: 1.3; }
       .monitor-date-remove:hover:not(:disabled) { color: #fff; background: #9c3846; border-color: #d56a78; }
       .monitor-date-remove:disabled { opacity: .48; cursor: not-allowed; }
@@ -331,6 +333,8 @@
       .monitor-table tfoot th, .monitor-table tfoot td { background: #172438; border-top-color: #30425b; }
       .monitor-table tfoot th:first-child { background: #172438; }
       .monitor-table .deduction-row td { color: #ff8792; background: #241720; }
+      .payment-method-monitor { margin-top: 24px; }
+      .payment-method-table th:not(:first-child), .payment-method-table td:not(:first-child) { text-align: right; }
       .field-chip { color: #c6d4e8; background: #101a28; border-color: #2a394e; }
       .about-hero { border-color: #29466d; background: linear-gradient(120deg, #101d2e, #111722 72%); }
       .about-label, .about-value-card strong { color: #c5dcff; }
@@ -458,7 +462,7 @@
             <div class="panel-heading">
               <div>
                 <h2 id="transaction-heading">Record a fund transaction</h2>
-                <div class="hint">Add funds to a member or deduct from the selected monitoring’s total. Deductions are not assigned to a member.</div>
+                <div class="hint">Choose a payment method for each transaction. Deductions reduce that method’s balance in the selected monitoring and are not assigned to a member.</div>
               </div>
             </div>
             <form id="transaction-form">
@@ -474,6 +478,7 @@
                 </div>
                 <div class="field" id="transaction-monitor-field"><label for="transaction-monitor">Monitoring form *</label><select id="transaction-monitor" required></select></div>
                 <div class="field" id="transaction-member-field"><label for="transaction-member">Member *</label><select id="transaction-member" required><option value="">Choose a member…</option></select></div>
+                <div class="field"><label for="transaction-payment-mode">Mode of payment *</label><select id="transaction-payment-mode" required><option value="">Choose a mode…</option><option>Cash</option><option>GCash</option><option>Bank transfer</option></select></div>
                 <div class="field"><label for="transaction-amount">Amount *</label><input id="transaction-amount" type="number" min="0.01" step="0.01" required placeholder="0.00"></div>
                 <div class="field"><label for="transaction-date">Date *</label><input id="transaction-date" type="date" required></div>
                 <div class="field"><label for="transaction-recorded-by">Recorded by</label><input id="transaction-recorded-by" maxlength="120" placeholder="Name or email"></div>
@@ -526,7 +531,7 @@
           </div>
           <div class="panel">
             <div class="panel-heading">
-              <div><h2 id="monitor-title">Monitoring table</h2><div class="hint">Values are read-only and show additions recorded through the fund form. Member and date totals update automatically; deductions reduce shared available funds, not member contributions.</div></div>
+              <div><h2 id="monitor-title">Monitoring table</h2><div class="hint">Values are read-only and show additions recorded through the fund form. Member and date totals update automatically; deductions reduce payment-method balances, not member contributions.</div></div>
               <select class="monitor-select" id="monitor-picker" aria-label="Choose monitoring"></select>
             </div>
             <div id="monitor-controls" class="toolbar" style="margin-bottom:14px">
@@ -546,6 +551,10 @@
             </div>
             <div class="status" id="monitor-status" role="status"></div>
             <div class="table-wrap" id="monitor-table"></div>
+            <div class="payment-method-monitor">
+              <div class="panel-heading"><div><h2>Payment method balances</h2><div class="hint">Additions, deductions, and remaining funds for the selected monitoring.</div></div></div>
+              <div class="table-wrap" id="payment-method-table"></div>
+            </div>
           </div>
         </section>
 
@@ -632,7 +641,7 @@
     </div>
 
     <script>
-        let appData = { fields: [], transactions: [], monitors: [], audit: [], actor: '' };
+        let appData = { fields: [], transactions: [], monitors: [], audit: [], paymentMethodOptions: [], actor: '' };
         let loggedInUser = '';
         const currency = new Intl.NumberFormat(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         const today = new Date();
@@ -894,6 +903,12 @@
           if (names.has(selectedMember.toLowerCase())) {
             memberPicker.value = names.get(selectedMember.toLowerCase());
           }
+          const paymentPicker = document.getElementById('transaction-payment-mode');
+          const selectedPaymentMode = paymentPicker.value;
+          const paymentModes = Array.isArray(appData.paymentMethodOptions) ? appData.paymentMethodOptions : [];
+          paymentPicker.innerHTML = '<option value="">Choose a mode…</option>' +
+            paymentModes.map(mode => '<option value="' + escapeHtml(mode) + '">' + escapeHtml(mode) + '</option>').join('');
+          if (paymentModes.includes(selectedPaymentMode)) paymentPicker.value = selectedPaymentMode;
         }
 
         function renderCustomInputs(values) {
@@ -943,7 +958,7 @@
           }
           const customHeaders = appData.fields;
           const monitorNames = new Map(appData.monitors.map(monitor => [monitor.id, monitor.name]));
-          root.innerHTML = '<table><thead><tr><th>Date</th><th>Type</th><th>Member</th><th>Amount</th><th>Monitoring</th><th>Purpose / remarks</th>' +
+          root.innerHTML = '<table><thead><tr><th>Date</th><th>Type</th><th>Member</th><th>Amount</th><th>Monitoring</th><th>Mode of payment</th><th>Purpose / remarks</th>' +
             customHeaders.map(field => '<th>' + escapeHtml(field.label) + '</th>').join('') +
             '<th>Recorded by</th><th>Actions</th></tr></thead><tbody>' +
             appData.transactions.map(transaction => '<tr><td>' + escapeHtml(transaction.date) + '</td><td><span class="badge ' +
@@ -951,7 +966,7 @@
               '</span></td><td>' + escapeHtml(transaction.type === 'DEDUCT' ? '—' : transaction.member) + '</td><td class="amount ' +
               (transaction.type === 'ADD' ? 'positive' : 'negative') + '">' +
               currency.format(transaction.amount) + '</td><td>' + escapeHtml(monitorNames.get(transaction.monitorId) || '—') +
-              '</td><td>' + escapeHtml(transaction.purpose || '—') + '</td>' +
+              '</td><td>' + escapeHtml(transaction.paymentMode || 'Unspecified') + '</td><td>' + escapeHtml(transaction.purpose || '—') + '</td>' +
               customHeaders.map(field => '<td>' + escapeHtml(transaction.customFields[field.id] || '—') + '</td>').join('') +
               '<td>' + escapeHtml(transaction.recordedBy || '—') + '</td><td><div class="toolbar">' +
               '<button class="btn small" type="button" data-edit-transaction="' + escapeHtml(transaction.id) + '">Edit</button>' +
@@ -979,6 +994,7 @@
             type: document.getElementById('transaction-type').value,
             monitorId: document.getElementById('transaction-monitor').value,
             member: document.getElementById('transaction-type').value === 'ADD' ? document.getElementById('transaction-member').value : '',
+            paymentMode: document.getElementById('transaction-payment-mode').value,
             amount: document.getElementById('transaction-amount').value,
             date: document.getElementById('transaction-date').value,
             purpose: document.getElementById('transaction-purpose').value,
@@ -1004,6 +1020,8 @@
           document.getElementById('transaction-date').value = transaction.date;
           document.getElementById('transaction-purpose').value = transaction.purpose;
           document.getElementById('transaction-recorded-by').value = transaction.recordedBy;
+          document.getElementById('transaction-payment-mode').value =
+            (appData.paymentMethodOptions || []).includes(transaction.paymentMode) ? transaction.paymentMode : '';
           renderCustomInputs(transaction.customFields);
           document.getElementById('transaction-heading').textContent = 'Edit fund transaction';
           document.getElementById('transaction-submit').textContent = 'Save changes';
@@ -1109,10 +1127,12 @@
           if (!monitor) {
             document.getElementById('monitor-controls').hidden = true;
             document.getElementById('monitor-table').innerHTML = '<div class="empty">Create a monitoring form to get started.</div>';
+            document.getElementById('payment-method-table').innerHTML = '<div class="empty">Create a monitoring form to see payment method balances.</div>';
             return;
           }
           document.getElementById('monitor-controls').hidden = false;
           document.getElementById('monitor-title').textContent = monitor.name;
+          renderPaymentMethodMonitor(monitor);
           const root = document.getElementById('monitor-table');
           if (!monitor.dates.length) {
             root.innerHTML = '<div class="empty">Add a date column or record a fund transaction to start tracking.</div>';
@@ -1150,7 +1170,27 @@
           });
         }
 
+        function renderPaymentMethodMonitor(monitor) {
+          const root = document.getElementById('payment-method-table');
+          const methods = Array.isArray(monitor.paymentMethods) ? monitor.paymentMethods : [];
+          const totals = methods.reduce((sum, method) => ({
+            additions: sum.additions + Number(method.additions || 0),
+            deductions: sum.deductions + Number(method.deductions || 0),
+            balance: sum.balance + Number(method.balance || 0)
+          }), { additions: 0, deductions: 0, balance: 0 });
+          root.innerHTML = '<table class="monitor-table payment-method-table"><thead><tr>' +
+            '<th>Mode of payment</th><th>Additions</th><th>Deductions</th><th>Balance</th></tr></thead><tbody>' +
+            methods.map(method => '<tr><td class="member-cell">' + escapeHtml(method.name) +
+              '</td><td class="amount">' + currency.format(Number(method.additions || 0)) +
+              '</td><td class="amount">' + currency.format(Number(method.deductions || 0)) +
+              '</td><td class="amount">' + currency.format(Number(method.balance || 0)) + '</td></tr>').join('') +
+            '</tbody><tfoot><tr><th>All payment methods</th><td class="amount">' +
+            currency.format(totals.additions) + '</td><td class="amount">' + currency.format(totals.deductions) +
+            '</td><td class="amount">' + currency.format(totals.balance) + '</td></tr></tfoot></table>';
+        }
+
         function monitorDateHasActivity(monitor, date) {
+          if (Array.isArray(monitor.datesWithTransactions) && monitor.datesWithTransactions.includes(date)) return true;
           const memberContributions = monitor.members.reduce((sum, member) =>
             sum + Number(member.values[date] || 0), 0);
           const deductions = Number(monitor.deductionsByDate[date] || 0);

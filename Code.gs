@@ -1,5 +1,6 @@
 const SPREADSHEET_ID = '1bK_remWm6O5Jj4p37stkf4vCi3jV0p4zyh5U2wiM-QU';
 const SESSION_TTL_SECONDS = 21600;
+const PAYMENT_METHODS = ['Cash', 'GCash', 'Bank transfer'];
 let activeRequestActor = '';
 let activeRequestToken = '';
 
@@ -242,6 +243,7 @@ function getAppData() {
   const monitors = monitorRows.map(row => {
       const monitorId = String(row.id);
       const dates = new Set(parseJson_(row.dates, []));
+      const monitorTransactions = transactions.filter(transaction => transaction.monitorId === monitorId);
       const monitorMemberRows = getRows_('members')
         .filter(member => String(member.monitorId) === monitorId);
       const archivedMemberNames = new Set(monitorMemberRows
@@ -261,7 +263,7 @@ function getAppData() {
         id: member.id, name: member.name, plakaso: member.plakaso, values: {}
       }]));
       const contributionsByDate = {};
-      transactions.filter(transaction => transaction.monitorId === monitorId).forEach(transaction => {
+      monitorTransactions.forEach(transaction => {
         dates.add(transaction.date);
         if (transaction.type !== 'ADD') return;
         const key = transaction.member.toLowerCase();
@@ -286,8 +288,8 @@ function getAppData() {
       });
       const deductionsByDate = {};
       dates.forEach(date => {
-        deductionsByDate[date] = roundMoney_(transactions
-          .filter(transaction => transaction.type === 'DEDUCT' && transaction.monitorId === monitorId && transaction.date === date)
+        deductionsByDate[date] = roundMoney_(monitorTransactions
+          .filter(transaction => transaction.type === 'DEDUCT' && transaction.date === date)
           .reduce((sum, transaction) => sum + transaction.amount, 0));
       });
       const totals = {};
@@ -298,11 +300,13 @@ function getAppData() {
         id: monitorId,
         name: String(row.name),
         dates: Array.from(dates).sort(),
+        datesWithTransactions: Array.from(new Set(monitorTransactions.map(transaction => transaction.date))).sort(),
         members: Array.from(membersByName.values()),
         deductionsByDate: deductionsByDate,
         deductionTotal: roundMoney_(Object.keys(deductionsByDate).reduce((sum, date) => sum + deductionsByDate[date], 0)),
         totals: totals,
-        total: roundMoney_(Array.from(dates).reduce((sum, date) => sum + totals[date], 0))
+        total: roundMoney_(Array.from(dates).reduce((sum, date) => sum + totals[date], 0)),
+        paymentMethods: summarizePaymentMethods_(monitorTransactions)
       };
     });
   const memberDirectoryByName = new Map();
@@ -344,6 +348,7 @@ function getAppData() {
     memberDirectory: memberDirectory,
     audit: audit,
     availableFunds: availableFunds,
+    paymentMethodOptions: PAYMENT_METHODS,
     actor: getActor_()
   };
 }
@@ -415,8 +420,12 @@ function saveTransactionLocked_(payload) {
   if (monitorId && !activeMonitors.some(row => String(row.id) === monitorId)) {
     throw new Error('Choose an active monitoring form.');
   }
+  const paymentMode = cleanText_(payload.paymentMode, 50);
+  if (PAYMENT_METHODS.indexOf(paymentMode) === -1) {
+    throw new Error('Choose a valid mode of payment.');
+  }
 
-  const custom = {};
+  const custom = { paymentMode: paymentMode };
   const fieldById = {};
   getRows_('fields').filter(row => row.active === true || String(row.active).toLowerCase() === 'true')
     .forEach(row => { fieldById[String(row.id)] = row; });
@@ -461,7 +470,8 @@ function saveTransactionLocked_(payload) {
     recordedBy: recordedBy,
     customFields: JSON.stringify(custom),
     status: 'ACTIVE',
-    monitorId: monitorId
+    monitorId: monitorId,
+    paymentMode: paymentMode
   };
   const priorTransactions = getRows_('transactions')
     .filter(row => row.status !== 'VOID' && (!existing || String(row.id) !== id))
@@ -475,6 +485,13 @@ function saveTransactionLocked_(payload) {
     .reduce((balance, transaction) => balance + (transaction.type === 'ADD' ? transaction.amount : -transaction.amount), 0));
   if (candidate.type === 'DEDUCT' && amount > monitoredBalance) {
     throw new Error('This deduction exceeds available funds in the selected monitoring (' + formatAmount_(monitoredBalance) + ').');
+  }
+  const methodBalance = roundMoney_(priorTransactions
+    .filter(transaction => transaction.monitorId === monitorId && transaction.paymentMode === paymentMode)
+    .reduce((balance, transaction) => balance + (transaction.type === 'ADD' ? transaction.amount : -transaction.amount), 0));
+  if (candidate.type === 'DEDUCT' && amount > methodBalance) {
+    throw new Error('This deduction exceeds available ' + paymentMode +
+      ' funds in the selected monitoring (' + formatAmount_(methodBalance) + ').');
   }
 
   if (candidate.type === 'ADD') ensureMonitoringDimensions_(monitorId, member, date);
@@ -491,7 +508,7 @@ function saveTransactionLocked_(payload) {
   } else {
     sheet.appendRow(values);
     audit_(candidate.type === 'ADD' ? 'Added funds' : 'Deducted funds', 'Transaction', id,
-      JSON.stringify({ member: member || 'All funds', amount: amount, date: date, purpose: purpose, monitorId: monitorId }));
+      JSON.stringify({ member: member || 'All funds', amount: amount, date: date, purpose: purpose, monitorId: monitorId, paymentMode: paymentMode }));
   }
   return getAppData();
 }
@@ -704,6 +721,7 @@ function findRow_(key, header, value) {
 }
 
 function transactionToClient_(row) {
+  const customFields = parseJson_(row.customFields, {});
   return {
     id: String(row.id),
     createdAt: dateTimeToClient_(row.createdAt),
@@ -713,9 +731,32 @@ function transactionToClient_(row) {
     date: validDate_(row.date) || '',
     purpose: String(row.purpose || ''),
     recordedBy: String(row.recordedBy || ''),
-    customFields: parseJson_(row.customFields, {}),
-    monitorId: String(row.monitorId || '')
+    customFields: customFields,
+    monitorId: String(row.monitorId || ''),
+    paymentMode: String(customFields.paymentMode || 'Unspecified')
   };
+}
+
+function summarizePaymentMethods_(transactions) {
+  const methods = PAYMENT_METHODS.slice();
+  transactions.forEach(transaction => {
+    if (methods.indexOf(transaction.paymentMode) === -1) methods.push(transaction.paymentMode);
+  });
+  return methods.map(name => {
+    const methodTransactions = transactions.filter(transaction => transaction.paymentMode === name);
+    const additions = roundMoney_(methodTransactions
+      .filter(transaction => transaction.type === 'ADD')
+      .reduce((sum, transaction) => sum + transaction.amount, 0));
+    const deductions = roundMoney_(methodTransactions
+      .filter(transaction => transaction.type === 'DEDUCT')
+      .reduce((sum, transaction) => sum + transaction.amount, 0));
+    return {
+      name: name,
+      additions: additions,
+      deductions: deductions,
+      balance: roundMoney_(additions - deductions)
+    };
+  });
 }
 
 function audit_(action, entity, entityId, details) {
