@@ -6,8 +6,10 @@ const allowedMethods = new Set([
   'saveFormField',
   'archiveFormField',
   'saveTransaction',
+  'saveMultipleTransactions',
   'voidTransaction',
   'addMasterMember',
+  'updateMasterMember',
   'createMonitoring',
   'addMonitoringDate',
   'removeMonitoringDate',
@@ -42,7 +44,7 @@ module.exports = async function handler(request, response) {
   const body = request.body;
   if (!body || typeof body !== 'object' || Array.isArray(body) ||
       typeof body.method !== 'string' || !allowedMethods.has(body.method) ||
-      (body.args != null && (!Array.isArray(body.args) || body.args.length > 2)) ||
+      (body.args != null && (!Array.isArray(body.args) || body.args.length > 3)) ||
       (body.method === 'login' &&
         (!Array.isArray(body.args) || body.args.length !== 2 ||
           typeof body.args[0] !== 'string' || body.args[0].length > 120 ||

@@ -82,6 +82,7 @@
       .field textarea { min-height: 74px; resize: vertical; }
       .span-all { grid-column: 1 / -1; }
       .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 9px; }
+      .allocation-row .field { flex: 1 1 210px; }
       .btn { border: 1px solid #d8e0eb; border-radius: 8px; padding: 9px 13px; background: white; color: #31425d; font-weight: 650; }
       .btn:hover { background: #f5f8fd; }
       .btn.primary { border-color: var(--blue); background: var(--blue); color: white; }
@@ -480,13 +481,17 @@
                 <div class="field" id="transaction-monitor-field"><label for="transaction-monitor">Monitoring form *</label><select id="transaction-monitor" required></select></div>
                 <div class="field" id="transaction-member-field"><label for="transaction-member">Member *</label><select id="transaction-member" required><option value="">Choose a member…</option></select></div>
                 <div class="field"><label for="transaction-payment-mode">Mode of payment *</label><select id="transaction-payment-mode" required><option value="">Choose a mode…</option><option>Cash</option><option>GCash</option><option>Bank transfer</option></select></div>
-                <div class="field"><label for="transaction-amount">Amount *</label><input id="transaction-amount" type="number" min="0.01" step="0.01" required placeholder="0.00"></div>
-                <div class="field"><label for="transaction-date">Date *</label><input id="transaction-date" type="date" required></div>
+                <div class="field span-all">
+                  <div><strong>Contribution dates and amounts</strong><div class="hint">Each date is saved as a separate contribution.</div></div>
+                  <div id="transaction-allocations" class="form-grid"></div>
+                  <div id="allocation-total" class="hint" aria-live="polite"></div>
+                </div>
                 <div class="field"><label for="transaction-recorded-by">Recorded by</label><input id="transaction-recorded-by" maxlength="120" placeholder="Name or email"></div>
                 <div class="field"><label for="transaction-purpose">Purpose / remarks</label><input id="transaction-purpose" maxlength="500" placeholder="Optional details"></div>
                 <div id="custom-fields" class="form-grid span-all"></div>
               </div>
               <div class="toolbar" style="margin-top:15px">
+                <button class="btn" id="add-transaction-date" type="button">Add another date</button>
                 <button class="btn primary" id="transaction-submit" type="submit">Save transaction</button>
                 <button class="btn" id="transaction-cancel" type="button" hidden>Cancel edit</button>
               </div>
@@ -644,6 +649,7 @@
     <script>
         let appData = { fields: [], transactions: [], monitors: [], audit: [], paymentMethodOptions: [], actor: '' };
         let loggedInUser = '';
+        let editingMasterMember = '';
         const currency = new Intl.NumberFormat(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         const today = new Date();
         const loginPage = document.getElementById('login-page');
@@ -810,7 +816,8 @@
             });
         }
 
-        document.getElementById('transaction-date').value = toDateInput(today);
+        resetAllocationRows([{ date: toDateInput(today), amount: '' }]);
+        document.getElementById('add-transaction-date').addEventListener('click', addNextAllocationRow);
         document.getElementById('monitor-date').value = toDateInput(today);
         document.getElementById('transaction-recorded-by').value = '';
         document.getElementById('member-search').addEventListener('input', renderMasterList);
@@ -840,7 +847,14 @@
           document.getElementById('field-options-wrap').hidden = event.target.value !== 'select';
         });
         document.querySelectorAll('[data-transaction-type]').forEach(button => {
-          button.addEventListener('click', () => setTransactionType(button.dataset.transactionType));
+          button.addEventListener('click', () => {
+            if (button.dataset.transactionType === 'DEDUCT' && getAllocationRows().length > 1) {
+              setStatus(document.getElementById('transaction-status'),
+                'Remove the extra date rows before switching to a deduction.', true);
+              return;
+            }
+            setTransactionType(button.dataset.transactionType);
+          });
         });
         document.getElementById('transaction-form').addEventListener('submit', submitTransaction);
         document.getElementById('transaction-cancel').addEventListener('click', resetTransactionForm);
@@ -990,22 +1004,30 @@
             const input = document.getElementById('custom-' + field.id);
             customFields[field.id] = input ? input.value : '';
           });
-          const payload = {
-            id: document.getElementById('transaction-id').value,
+          const basePayload = {
             type: document.getElementById('transaction-type').value,
             monitorId: document.getElementById('transaction-monitor').value,
             member: document.getElementById('transaction-type').value === 'ADD' ? document.getElementById('transaction-member').value : '',
             paymentMode: document.getElementById('transaction-payment-mode').value,
-            amount: document.getElementById('transaction-amount').value,
-            date: document.getElementById('transaction-date').value,
             purpose: document.getElementById('transaction-purpose').value,
             recordedBy: document.getElementById('transaction-recorded-by').value,
             customFields: customFields
           };
-          callServer('saveTransaction', [payload], data => {
+          const allocations = getAllocationRows().map(row => Object.assign({}, basePayload, row));
+          const transactionId = document.getElementById('transaction-id').value;
+          if (transactionId) {
+            allocations[0].id = transactionId;
+          }
+          const useBatch = basePayload.type === 'ADD' && !transactionId && allocations.length > 1;
+          const method = useBatch ? 'saveMultipleTransactions' : 'saveTransaction';
+          const args = useBatch ? [allocations] : [allocations[0]];
+          callServer(method, args, data => {
             updateData(data);
             resetTransactionForm();
-            setStatus(document.getElementById('transaction-status'), 'Transaction saved.', false, true);
+            setStatus(document.getElementById('transaction-status'),
+              useBatch ? allocations.length + ' dated contributions saved. Total: ' +
+                currency.format(allocations.reduce((sum, row) => sum + Number(row.amount), 0)) :
+                'Transaction saved.', false, true);
           }, document.getElementById('transaction-status'));
         }
 
@@ -1017,8 +1039,7 @@
           document.getElementById('transaction-monitor').value = transaction.monitorId;
           ensureTransactionMemberOption(transaction.member);
           document.getElementById('transaction-member').value = transaction.member;
-          document.getElementById('transaction-amount').value = transaction.amount;
-          document.getElementById('transaction-date').value = transaction.date;
+          resetAllocationRows([{ amount: transaction.amount, date: transaction.date }]);
           document.getElementById('transaction-purpose').value = transaction.purpose;
           document.getElementById('transaction-recorded-by').value = transaction.recordedBy;
           document.getElementById('transaction-payment-mode').value =
@@ -1028,6 +1049,86 @@
           document.getElementById('transaction-submit').textContent = 'Save changes';
           document.getElementById('transaction-cancel').hidden = false;
           document.getElementById('transaction-form').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        function getAllocationRows() {
+          return Array.from(document.querySelectorAll('#transaction-allocations .allocation-row')).map(row => ({
+            date: row.querySelector('[data-allocation-date]').value,
+            amount: row.querySelector('[data-allocation-amount]').value
+          }));
+        }
+
+        function resetAllocationRows(rows) {
+          const root = document.getElementById('transaction-allocations');
+          root.innerHTML = '';
+          rows.forEach(row => addAllocationRow(row.date, row.amount));
+          updateAllocationTotal();
+        }
+
+        function addAllocationRow(date, amount) {
+          const root = document.getElementById('transaction-allocations');
+          const row = document.createElement('div');
+          row.className = 'allocation-row toolbar span-all';
+
+          const dateLabel = document.createElement('label');
+          dateLabel.className = 'field';
+          dateLabel.textContent = 'Contribution date *';
+          const dateInput = document.createElement('input');
+          dateInput.type = 'date';
+          dateInput.required = true;
+          dateInput.dataset.allocationDate = '';
+          dateInput.value = date || toDateInput(new Date());
+          dateInput.addEventListener('input', updateAllocationTotal);
+          dateLabel.appendChild(dateInput);
+
+          const amountLabel = document.createElement('label');
+          amountLabel.className = 'field';
+          amountLabel.textContent = 'Amount *';
+          const amountInput = document.createElement('input');
+          amountInput.type = 'number';
+          amountInput.min = '0.01';
+          amountInput.step = '0.01';
+          amountInput.required = true;
+          amountInput.placeholder = '0.00';
+          amountInput.dataset.allocationAmount = '';
+          amountInput.value = amount == null ? '' : amount;
+          amountInput.addEventListener('input', updateAllocationTotal);
+          amountLabel.appendChild(amountInput);
+
+          const removeButton = document.createElement('button');
+          removeButton.className = 'btn small danger';
+          removeButton.type = 'button';
+          removeButton.textContent = 'Remove';
+          removeButton.setAttribute('aria-label', 'Remove this contribution date');
+          removeButton.addEventListener('click', () => {
+            row.remove();
+            updateAllocationTotal();
+          });
+          row.append(dateLabel, amountLabel, removeButton);
+          root.appendChild(row);
+          updateAllocationTotal();
+        }
+
+        function addNextAllocationRow() {
+          const rows = getAllocationRows();
+          const lastDate = rows.length ? rows[rows.length - 1].date : '';
+          let nextDate = toDateInput(new Date());
+          if (lastDate) {
+            const date = new Date(lastDate + 'T00:00:00');
+            date.setDate(date.getDate() + 7);
+            nextDate = toDateInput(date);
+          }
+          addAllocationRow(nextDate, '');
+        }
+
+        function updateAllocationTotal() {
+          const rows = getAllocationRows();
+          const total = rows.reduce((sum, row) => sum + (Number(row.amount) || 0), 0);
+          const label = rows.length === 1 ? 'Total' : 'Total across ' + rows.length + ' dates';
+          document.getElementById('allocation-total').textContent = label + ': ' + currency.format(total);
+          document.querySelectorAll('#transaction-allocations .allocation-row button').forEach(button => {
+            button.hidden = rows.length === 1;
+          });
         }
 
         function ensureTransactionMemberOption(name) {
@@ -1044,7 +1145,7 @@
         function resetTransactionForm() {
           document.getElementById('transaction-form').reset();
           document.getElementById('transaction-id').value = '';
-          document.getElementById('transaction-date').value = toDateInput(new Date());
+          resetAllocationRows([{ date: toDateInput(new Date()), amount: '' }]);
           document.getElementById('transaction-recorded-by').value = '';
           const monitorPicker = document.getElementById('monitor-picker');
           if (monitorPicker.value) document.getElementById('transaction-monitor').value = monitorPicker.value;
@@ -1479,10 +1580,45 @@
             root.innerHTML = '<div class="empty">' + (query ? 'No members match that search.' : 'No members found. Add a member above to get started.') + '</div>';
             return;
           }
-          root.innerHTML = '<table class="master-list-table"><thead><tr><th>Name</th><th>Plakaso</th></tr></thead><tbody>' +
-            rows.map(member => '<tr><td>' + escapeHtml(member.name) + '</td><td>' +
-              escapeHtml(member.plakaso || '—') + '</td></tr>').join('') +
+          root.innerHTML = '<table class="master-list-table"><thead><tr><th>Name</th><th>Plakaso</th><th>Actions</th></tr></thead><tbody>' +
+            rows.map(member => {
+              const isEditing = editingMasterMember === member.name;
+              if (isEditing) {
+                return '<tr><td colspan="3"><form class="toolbar" data-edit-master-member="' + escapeHtml(member.name) + '">' +
+                  '<label class="field">Name<input class="monitor-select" name="name" maxlength="120" required value="' +
+                  escapeHtml(member.name) + '"></label>' +
+                  '<label class="field">Plakaso<input class="monitor-select" name="plakaso" maxlength="120" value="' +
+                  escapeHtml(member.plakaso) + '"></label>' +
+                  '<button class="btn primary" type="submit">Save</button>' +
+                  '<button class="btn" type="button" data-cancel-master-edit>Cancel</button>' +
+                  '</form></td></tr>';
+              }
+              return '<tr><td>' + escapeHtml(member.name) + '</td><td>' + escapeHtml(member.plakaso || '—') +
+                '</td><td><button class="btn small" type="button" data-edit-master="' +
+                escapeHtml(member.name) + '">Edit</button></td></tr>';
+            }).join('') +
             '</tbody></table>';
+          root.querySelectorAll('[data-edit-master]').forEach(button => button.addEventListener('click', () => {
+            editingMasterMember = button.dataset.editMaster;
+            renderMasterList();
+          }));
+          root.querySelectorAll('[data-cancel-master-edit]').forEach(button => button.addEventListener('click', () => {
+            editingMasterMember = '';
+            renderMasterList();
+          }));
+          root.querySelectorAll('[data-edit-master-member]').forEach(form => form.addEventListener('submit', event => {
+            event.preventDefault();
+            const formData = new FormData(form);
+            callServer('updateMasterMember', [
+              form.dataset.editMasterMember,
+              formData.get('name'),
+              formData.get('plakaso')
+            ], data => {
+              editingMasterMember = '';
+              updateData(data);
+              setStatus(document.getElementById('master-member-status'), 'Master list member updated.', false, true);
+            }, document.getElementById('master-member-status'));
+          }));
         }
 
         function updateData(data) {
@@ -1513,6 +1649,8 @@
           memberInput.required = !isDeduction;
           monitorInput.disabled = !hasMonitors;
           monitorInput.required = hasMonitors;
+          document.getElementById('add-transaction-date').hidden =
+            isDeduction || Boolean(document.getElementById('transaction-id').value);
           if (!document.getElementById('transaction-id').value) {
             document.getElementById('transaction-heading').textContent = type === 'ADD' ? 'Record a fund addition' : 'Deduct from total funds';
             document.getElementById('transaction-submit').textContent = type === 'ADD' ? 'Save addition' : 'Save deduction';

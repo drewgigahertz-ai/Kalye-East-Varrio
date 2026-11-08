@@ -62,8 +62,10 @@ function doPost(event) {
       saveFormField: saveFormField,
       archiveFormField: archiveFormField,
       saveTransaction: saveTransaction,
+      saveMultipleTransactions: saveMultipleTransactions,
       voidTransaction: voidTransaction,
       addMasterMember: addMasterMember,
+      updateMasterMember: updateMasterMember,
       createMonitoring: createMonitoring,
       addMonitoringDate: addMonitoringDate,
       removeMonitoringDate: removeMonitoringDate,
@@ -401,7 +403,80 @@ function saveTransaction(payload) {
   return withTrackerLock_(() => saveTransactionLocked_(payload));
 }
 
-function saveTransactionLocked_(payload) {
+function saveMultipleTransactions(payloads) {
+  return withTrackerLock_(() => {
+    ensureTables_();
+    if (!Array.isArray(payloads) || payloads.length < 2 || payloads.length > 52) {
+      throw new Error('Add between 2 and 52 dated amounts.');
+    }
+
+    validateAdditionBatch_(payloads);
+    payloads.forEach(payload => saveTransactionLocked_(payload, true));
+    return getAppData();
+  });
+}
+
+function validateAdditionBatch_(payloads) {
+  const activeMonitors = getRows_('monitors').filter(row => row.status !== 'ARCHIVED');
+  const fields = getRows_('fields')
+    .filter(row => row.active === true || String(row.active).toLowerCase() === 'true');
+  const dates = new Set();
+  const first = payloads[0];
+  if (!first || typeof first !== 'object' || String(first.type) !== 'ADD' || first.id) {
+    throw new Error('Multiple dates are supported for new fund additions only.');
+  }
+  const member = cleanText_(first.member, 120);
+  const monitorId = cleanText_(first.monitorId, 100);
+  const paymentMode = cleanText_(first.paymentMode, 50);
+  const sharedFields = JSON.stringify(first.customFields || {});
+  if (!member) throw new Error('Enter a member name.');
+  if (activeMonitors.length && !monitorId) throw new Error('Choose a monitoring form for this transaction.');
+  if (monitorId && !activeMonitors.some(row => String(row.id) === monitorId)) {
+    throw new Error('Choose an active monitoring form.');
+  }
+  if (PAYMENT_METHODS.indexOf(paymentMode) === -1) throw new Error('Choose a valid mode of payment.');
+
+  payloads.forEach(payload => {
+    if (!payload || typeof payload !== 'object' || String(payload.type) !== 'ADD' || payload.id ||
+        cleanText_(payload.member, 120) !== member ||
+        cleanText_(payload.monitorId, 100) !== monitorId ||
+        cleanText_(payload.paymentMode, 50) !== paymentMode ||
+        cleanText_(payload.purpose, 500) !== cleanText_(first.purpose, 500) ||
+        cleanText_(payload.recordedBy, 120) !== cleanText_(first.recordedBy, 120) ||
+        JSON.stringify(payload.customFields || {}) !== sharedFields) {
+      throw new Error('All dates must use the same member and transaction details.');
+    }
+
+    const enteredAmount = Number(payload.amount);
+    const amount = Math.round(enteredAmount * 100) / 100;
+    if (!Number.isFinite(enteredAmount) || enteredAmount <= 0) throw new Error('Amount must be greater than zero.');
+    if (Math.abs(enteredAmount - amount) > 0.0000001) {
+      throw new Error('Amount can have no more than two decimal places.');
+    }
+    const date = validDate_(payload.date);
+    if (!date) throw new Error('Choose a valid transaction date.');
+    if (dates.has(date)) throw new Error('Choose a different date for each amount.');
+    dates.add(date);
+
+    const customValues = payload.customFields || {};
+    fields.forEach(field => {
+      const id = String(field.id);
+      const value = cleanText_(customValues[id], 500);
+      if (Boolean(field.required) && !value) throw new Error('"' + field.label + '" is required.');
+      if (field.type === 'select' && value && String(field.options).split('\n').indexOf(value) === -1) {
+        throw new Error('Choose a valid option for "' + field.label + '".');
+      }
+      if (field.type === 'number' && value && !Number.isFinite(Number(value))) {
+        throw new Error('"' + field.label + '" must be a number.');
+      }
+      if (field.type === 'date' && value && !validDate_(value)) {
+        throw new Error('"' + field.label + '" must be a valid date.');
+      }
+    });
+  });
+}
+
+function saveTransactionLocked_(payload, skipResponse) {
   ensureTables_();
   if (!payload || !['ADD', 'DEDUCT'].includes(String(payload.type))) throw new Error('Choose an addition or deduction.');
   const member = String(payload.type) === 'ADD' ? cleanText_(payload.member, 120) : '';
@@ -510,7 +585,7 @@ function saveTransactionLocked_(payload) {
     audit_(candidate.type === 'ADD' ? 'Added funds' : 'Deducted funds', 'Transaction', id,
       JSON.stringify({ member: member || 'All funds', amount: amount, date: date, purpose: purpose, monitorId: monitorId, paymentMode: paymentMode }));
   }
-  return getAppData();
+  return skipResponse ? null : getAppData();
 }
 
 function voidTransaction(transactionId) {
@@ -656,6 +731,88 @@ function addMasterMember(memberName, memberPlakaso) {
     audit_('Added master list member', 'Master list member', name, plakaso ? name + ' · ' + plakaso : name);
     return getAppData();
   });
+}
+
+function updateMasterMember(memberName, updatedName, updatedPlakaso) {
+  return withTrackerLock_(() => {
+    ensureTables_();
+    const previousName = cleanText_(memberName, 120);
+    const name = cleanText_(updatedName, 120);
+    const plakaso = cleanText_(updatedPlakaso, 120);
+    if (!previousName || !name) throw new Error('Enter a member name.');
+
+    const oldKey = previousName.toLowerCase();
+    const newKey = name.toLowerCase();
+    const directory = getAppData().memberDirectory;
+    if (!directory.some(member => member.name.trim().toLowerCase() === oldKey)) {
+      throw new Error('That member is no longer in the directory. Refresh the page and try again.');
+    }
+    if (newKey !== oldKey && directory.some(member => member.name.trim().toLowerCase() === newKey)) {
+      throw new Error('That name is already in the master list.');
+    }
+
+    const masterSheet = getSheet_('masterMembers');
+    const masterLastRow = masterSheet.getLastRow();
+    let hasActiveMasterMember = false;
+    if (masterLastRow > 1) {
+      const masterRange = masterSheet.getRange(2, 1, masterLastRow - 1, TABLES.masterMembers.headers.length);
+      const masterRows = masterRange.getValues();
+      masterRows.forEach(row => {
+        if (row[3] !== 'ARCHIVED' && String(row[0]).trim().toLowerCase() === oldKey) {
+          row[0] = name;
+          row[1] = plakaso;
+          hasActiveMasterMember = true;
+        }
+      });
+      masterRange.setValues(masterRows);
+    }
+    if (!hasActiveMasterMember) {
+      masterSheet.appendRow([name, plakaso, new Date(), 'ACTIVE']);
+    }
+
+    updateMemberReferences_('members', 2, oldKey, name, -1, '');
+    updateMemberReferences_('transactions', 4, oldKey, name, -1, '');
+    const profileRows = updateMemberReferences_('profiles', 0, oldKey, name, 1, plakaso);
+    if (!profileRows) {
+      getSheet_('profiles').appendRow([name, plakaso, new Date()]);
+    } else {
+      updateMemberProfileTimestamps_(newKey);
+    }
+    audit_('Updated master list member', 'Master list member', name,
+      previousName === name ? name + ' · ' + (plakaso || 'no plakaso') : previousName + ' → ' + name);
+    return getAppData();
+  });
+}
+
+function updateMemberReferences_(key, nameColumnIndex, oldKey, name, plakasoColumnIndex, plakaso) {
+  const sheet = getSheet_(key);
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return 0;
+  const range = sheet.getRange(2, 1, lastRow - 1, TABLES[key].headers.length);
+  const rows = range.getValues();
+  let updated = 0;
+  rows.forEach(row => {
+    if (String(row[nameColumnIndex]).trim().toLowerCase() !== oldKey) return;
+    row[nameColumnIndex] = name;
+    if (plakasoColumnIndex >= 0) row[plakasoColumnIndex] = plakaso;
+    updated++;
+  });
+  if (updated) range.setValues(rows);
+  return updated;
+}
+
+function updateMemberProfileTimestamps_(memberKey) {
+  const sheet = getSheet_('profiles');
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return;
+  const range = sheet.getRange(2, 1, lastRow - 1, TABLES.profiles.headers.length);
+  const rows = range.getValues();
+  rows.forEach(row => {
+    if (String(row[0]).trim().toLowerCase() === memberKey) {
+      row[2] = new Date();
+    }
+  });
+  range.setValues(rows);
 }
 
 function ensureTables_() {

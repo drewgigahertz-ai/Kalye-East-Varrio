@@ -37,10 +37,10 @@ The Vercel API keeps the signed six-hour session in an HTTP-only cookie and the 
 
 ## Features
 
-- **Funds & forms:** Record additions by member and monitoring, or deductions against the selected monitoring and payment method. Choose Cash, GCash, or Bank transfer for each transaction. Edit or void transactions; configure optional and required transaction fields.
+- **Funds & forms:** Record additions by member and monitoring, or deductions against the selected monitoring and payment method. Add multiple dated contribution rows with a separate amount for each date; weekly rows default to seven days apart, and the total is shown before saving. For example, split 200 across four Saturdays by entering 50 for each, or use different amounts that add up to 200. Choose Cash, GCash, or Bank transfer for each transaction. Edit or void transactions; configure optional and required transaction fields.
 - **Monitoring:** Create multiple monitoring forms, add members and date columns, view read-only contribution values, visible general-deduction rows, and net totals. The selected monitoring also shows additions, deductions, and balance by payment method. Dates display as `Nov. 7, 2026`; empty date columns can be removed, while columns with non-void transactions are protected. Copy the table or download it as a PNG.
 - **Audit logs:** Review activity recorded through the tracker.
-- **Master list:** Add members with their plakaso, search the directory, and use its names in the fund form member dropdown. Members already in active monitoring forms also appear. New entries are stored in the automatically created `FT Master Members` sheet; existing monitoring members' plakaso values can be maintained in `FT Member Profiles`.
+- **Master list:** Add and edit members' names and plakaso, search the directory, and use its names in the fund form member dropdown. Members already in active monitoring forms also appear. Editing a member updates their name in monitoring records and transaction history. New entries are stored in the automatically created `FT Master Members` sheet.
 - **About:** Gives a general introduction to the community and its shared values without publishing personal leadership details or territorial claims.
 - Existing addition transactions without a monitoring ID are displayed under the first active monitoring for compatibility.
 
